@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 环境变量（真实配置不进库）
+.env
+
+# 数据（体积大/含敏感信息，不进库）
+data/raw/
+data/processed/
+
+# 工具
+.pytest_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
+
+# 系统
+.DS_Store
+Thumbs.db
