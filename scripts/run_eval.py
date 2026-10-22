@@ -42,7 +42,7 @@ def load_goldset(path: Path) -> list[dict]:
     return cases
 
 
-def evaluate(cases: list[dict], top_k: int = 3, min_similarity: float | None = None) -> dict:
+def evaluate(cases: list[dict], top_k: int = 3, min_similarity: float | None = None, use_rerank: bool = False) -> dict:
     """跑完整评测集，返回各项指标。"""
     settings = get_settings()
     collection = get(get_client(settings.chroma_dir))
@@ -60,7 +60,10 @@ def evaluate(cases: list[dict], top_k: int = 3, min_similarity: float | None = N
 
     for case in answerable:
         started = time.perf_counter()
-        result = retrieve(case["query"], top_k=top_k, min_similarity=min_similarity, collection=collection)
+        result = retrieve(
+            case["query"], top_k=top_k, min_similarity=min_similarity,
+            collection=collection, use_rerank=use_rerank,
+        )
         latencies.append((time.perf_counter() - started) * 1000)
 
         # 一个问题可能有多个章节都算答对，例如「甲硝唑喝酒」：
@@ -96,7 +99,10 @@ def evaluate(cases: list[dict], top_k: int = 3, min_similarity: float | None = N
 
     unsupported_ok = 0
     for case in unsupported:
-        result = retrieve(case["query"], top_k=top_k, min_similarity=min_similarity, collection=collection)
+        result = retrieve(
+            case["query"], top_k=top_k, min_similarity=min_similarity,
+            collection=collection, use_rerank=use_rerank,
+        )
         if not result.answerable and "未收录" in result.reason:
             unsupported_ok += 1
         else:
@@ -112,7 +118,10 @@ def evaluate(cases: list[dict], top_k: int = 3, min_similarity: float | None = N
 
     offtopic_ok = 0
     for case in offtopic:
-        result = retrieve(case["query"], top_k=top_k, min_similarity=min_similarity, collection=collection)
+        result = retrieve(
+            case["query"], top_k=top_k, min_similarity=min_similarity,
+            collection=collection, use_rerank=use_rerank,
+        )
         if not result.answerable:
             offtopic_ok += 1
         else:
@@ -147,6 +156,7 @@ def evaluate(cases: list[dict], top_k: int = 3, min_similarity: float | None = N
         "latency_max_ms": max(latencies) if latencies else 0,
         "failures": failures,
         "min_similarity": DEFAULT_MIN_SIMILARITY if min_similarity is None else min_similarity,
+        "use_rerank": use_rerank,
     }
 
 
@@ -163,6 +173,7 @@ def render_report(metrics: dict) -> str:
         "",
         f"- 评测集：{metrics['total']} 条（可答 {n_a} 条 / 应拒答 {metrics['n_refuse']} 条）",
         f"- 相似度阈值：{metrics['min_similarity']}",
+        f"- 重排：{'已开启（bge-reranker-v2-m3-int8）' if metrics['use_rerank'] else '未开启'}",
         "",
         "## 检索指标（仅可答用例）",
         "",
@@ -212,6 +223,7 @@ def main() -> None:
     parser.add_argument("--top", type=int, default=3)
     parser.add_argument("--min-sim", type=float, default=None)
     parser.add_argument("--report", default=str(DEFAULT_REPORT))
+    parser.add_argument("--rerank", action="store_true", help="启用 cross-encoder 重排")
     args = parser.parse_args()
 
     setup_logging()
@@ -219,7 +231,7 @@ def main() -> None:
     cases = load_goldset(Path(args.goldset))
     print(f"评测集：{len(cases)} 条")
 
-    metrics = evaluate(cases, top_k=args.top, min_similarity=args.min_sim)
+    metrics = evaluate(cases, top_k=args.top, min_similarity=args.min_sim, use_rerank=args.rerank)
     report = render_report(metrics)
     Path(args.report).write_text(report, encoding="utf-8")
 

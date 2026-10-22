@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     # 用绝对路径，避免换个目录执行命令就把库建到别处去
     chroma_dir: str = str(BASE_DIR / "data" / "chroma")
 
+    # ---- 重排 ----
+    # 本地 ONNX 模型（int8 量化，约 0.57GB）。fp32 版本是 2.27GB，检索质量差别很小。
+    rerank_model: str = "BAAI/bge-reranker-v2-m3-int8"
+    # 模型从 HuggingFace 下载，国内直连不通，默认走镜像
+    hf_endpoint: str = "https://hf-mirror.com"
+
 
 @lru_cache
 def get_settings() -> Settings:

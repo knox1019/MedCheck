@@ -13,7 +13,7 @@
 {"id": "h13", "query": "利伐沙班漏服了怎么办", "type": "answerable", "expected_drug": "利伐沙班", "expected_section": "注意事项", "why": "漏服处理"}
 {"id": "h14", "query": "二甲双胍做造影检查前要停吗", "type": "answerable", "expected_drug": "二甲双胍", "expected_section": "注意事项", "why": "特定临床场景"}
 {"id": "h15", "query": "阿奇霉素对心脏有影响吗", "type": "answerable", "expected_drug": "阿奇霉素", "expected_section": "注意事项", "why": "心脏不良反应"}
-{"id": "h16", "query": "瑞舒伐他汀会引起血糖升高吗", "type": "answerable", "expected_drug": "瑞舒伐他汀", "expected_section": "注意事项", "why": "与他汀类同名药易混淆"}
+{"id": "h16", "query": "瑞舒伐他汀吃了肌肉疼怎么办", "type": "answerable", "expected_drug": "瑞舒伐他汀", "expected_section": "注意事项", "why": "肌肉相关不良反应。原用例问「血糖升高」，但三个章节都没写血糖，属语料未覆盖，已替换；与他汀同名药易混淆"}
 {"id": "h17", "query": "氯沙坦吃了干咳正常吗", "type": "answerable", "expected_drug": "氯沙坦", "expected_section": "注意事项", "why": "与卡托普利同属降压，易混"}
 {"id": "h18", "query": "头孢克肟和酒能一起吗", "type": "answerable", "expected_drug": "头孢克肟", "expected_section": "药物相互作用", "why": "饮酒禁忌场景"}
 {"id": "h19", "query": "多潘立酮会导致心脏问题吗", "type": "answerable", "expected_drug": "多潘立酮", "expected_section": "注意事项", "why": "心脏风险"}

@@ -43,6 +43,7 @@ class RetrieveResult:
     answerable: bool = False
     reason: str = ""
     drug_match: DrugMatch = field(default_factory=DrugMatch)
+    reranked: bool = False
 
     @property
     def drug(self) -> str | None:
@@ -68,12 +69,28 @@ def supported_drugs(collection) -> set[str]:
     }
 
 
+# 重排器做成模块级单例：加载 ONNX 模型要 3-4 秒，
+# 如果每次查询都重新加载，评测 27 条就要多花一分多钟。
+_reranker = None
+
+
+def get_reranker():
+    global _reranker
+    if _reranker is None:
+        from app.rag.reranker import Reranker
+
+        _reranker = Reranker()
+    return _reranker
+
+
 def retrieve(
     query: str,
     top_k: int = 5,
     min_similarity: float | None = None,
     drug: str | None = None,
     collection=None,
+    use_rerank: bool = False,
+    recall_k: int | None = None,
 ) -> RetrieveResult:
     """检索并判断是否足以回答。
 
@@ -81,6 +98,9 @@ def retrieve(
         drug           手动指定药品，优先于自动识别
         min_similarity 覆盖默认阈值，评测时用来做对比实验
         collection     复用已打开的集合，批量调用时避免反复开库
+        use_rerank     是否启用 cross-encoder 重排
+        recall_k       召回阶段的候选数。开启重排时默认取 top_k 的 4 倍，
+                       因为重排需要比最终结果更大的候选池才有发挥空间
     """
     threshold = DEFAULT_MIN_SIMILARITY if min_similarity is None else min_similarity
     settings = get_settings()
@@ -110,8 +130,11 @@ def retrieve(
     else:
         where = None
 
+    # 召回阶段：开启重排时多取候选
+    candidate_k = recall_k or (top_k * 4 if use_rerank else top_k)
+
     query_vector = Embedder().embed_one(query)
-    hits = search(collection, query_vector, top_k=top_k, where=where)
+    hits = search(collection, query_vector, top_k=candidate_k, where=where)
 
     # 指定了药品却一条都没检到，说明这个药在库里没有对应章节
     if target_drugs and not hits:
@@ -119,14 +142,14 @@ def retrieve(
         result.reason = f"「{'、'.join(target_drugs)}」在知识库中没有匹配的章节"
         return result
 
-    result.hits = hits
-
-    # ---- 第三层：相关度阈值 ----
     if not hits:
         result.answerable = False
         result.reason = "知识库为空或未检索到任何内容"
         return result
 
+    # ---- 第三层：相关度阈值 ----
+    # 注意：阈值判断必须在重排之前，用「向量相似度」来判。
+    # 重排分数是 cross-encoder 的 logit，量纲不同，不能拿来跟 0.45 比。
     if hits[0]["similarity"] < threshold:
         result.answerable = False
         result.reason = (
@@ -134,6 +157,16 @@ def retrieve(
             f"阈值 {threshold:.2f}），不足以回答"
         )
         return result
+
+    # ---- 第四层（可选）：重排 ----
+    # 召回已保证「相关内容在候选里」，重排负责把最该在前面的拎上来。
+    if use_rerank:
+        hits = get_reranker().rerank(query, hits, top_k=top_k)
+        result.reranked = True
+    else:
+        hits = hits[:top_k]
+
+    result.hits = hits
 
     result.answerable = True
     if result.drug_match.has_unknown:
