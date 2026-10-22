@@ -1,0 +1,32 @@
+# 构建上下文设为项目根目录（..），因为 Dockerfile 需要 copy pyproject.toml 和 app/。
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: medcheck-api:dev
+
+    ports:
+      # 左边是宿主机端口，右边是容器端口
+      - "8000:8000"
+
+    # 从项目根的 .env 读配置。文件里没有的项由代码默认值兜底。
+    env_file:
+      - ../.env
+
+    environment:
+      # 覆盖环境名，方便在 /health 里区分「这个实例是容器跑的」
+      APP_ENV: docker
+      # 关键：容器内的 localhost 指容器自己，连不到宿主机的 Ollama。
+      # host.docker.internal 是 Docker Desktop 提供的特殊域名，指向宿主机。
+      EMBEDDING_BASE_URL: http://host.docker.internal:11434/v1
+
+    # Linux 下的 Docker 需要显式声明这条映射，Windows 的 Docker Desktop 自带支持
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      # 挂载数据目录：向量库不打进镜像（体积大且可重建），运行时挂进来
+      - ../data:/app/data
+
+    restart: unless-stopped

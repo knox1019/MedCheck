@@ -36,7 +36,7 @@ MedCheck 想解决的问题只有两个：
 | 报告解读生成（带强制引用）          | ⏳ Week 5  |
 | 用药禁忌核查 Agent（工具调用）     | ⏳ Week 6  |
 | 评测集与批量评测 Harness       | ⏳ Week 7  |
-| Docker 化部署             | ⏳ Week 8  |
+| Docker 化部署             | ✅ 已完成（镜像 1.01GB） |
 | 演示界面与方案材料              | ⏳ Week 9  |
 
 **说明**：本仓库按周迭代，README 如实反映当前进度，不提前描述未完成的能力。
@@ -136,6 +136,52 @@ uv run python -m scripts.parse_report data/samples/report_demo.pdf
 | 定性结果（阴性 / 阳性 / `+`） | ❌ 跳过该行                   | 后续版本处理                              |
 
 **设计原则**：解析不确定时标记为 `unknown`，绝不猜测一个参考范围。宁可少一条结论，也不要给错误结论。
+
+## 容器化部署
+
+```bash
+cd docker
+docker compose up --build
+curl http://127.0.0.1:8000/health
+```
+
+```
+{"status":"ok","env":"docker","version":"0.1.0-dev"}
+```
+
+镜像 `medcheck-api:dev`，体积 **1.01GB**，容器自带 healthcheck，`docker compose ps` 会显示 `(healthy)`。
+
+### 三个刻意的设计
+
+| 设计 | 原因 |
+| --- | --- |
+| `--host 0.0.0.0` | uvicorn 默认只监听 `127.0.0.1`，那是容器内部的回环地址，宿主机通过端口映射访问不到，表现为「容器起来了但浏览器打不开」 |
+| `uv sync --no-cache` | 不加的话 uv 会把包再解压一份到 `/root/.cache/uv`，实测多出 **543MB**，与 `.venv` 完全重复 |
+| healthcheck 用 `python -c urllib` 而不是 `curl` | slim 镜像里没有 curl，为检查健康状态去装一个会白占体积 |
+
+### 容器访问宿主机服务
+
+容器内的 `localhost` 指容器自己。要访问宿主机的 Ollama 必须用 `host.docker.internal`：
+
+```yaml
+environment:
+  EMBEDDING_BASE_URL: http://host.docker.internal:11434/v1
+extra_hosts:
+  - "host.docker.internal:host-gateway"
+```
+
+实测容器内解析结果：`host.docker.internal → 192.168.65.254`。
+
+### 镜像体积构成
+
+| 包 | 体积 | 说明 |
+| --- | --- | --- |
+| pymupdf | 110MB | PDF 解析，必需 |
+| kubernetes | 75MB | **chromadb 的传递依赖**，本地单机模式完全用不到 |
+| onnxruntime | 63MB | chromadb 自带 embedding 的依赖，我们用外部 embedding，用不到 |
+| numpy + numpy.libs | 59MB | 数值计算，必需 |
+
+后续可优化：换用更轻的向量库，或拆分「只跑 API 的精简镜像」。当前阶段优先保证功能完整。
 
 ## 知识库与检索
 
@@ -290,7 +336,7 @@ medcheck/
 
 | 周次  | 目标      | 交付物                      | 状态 |
 | --- | ------- | ------------------------ | -- |
-| W1  | 项目骨架    | 服务可启动，`/health` 可用，容器可构建 | ✅ 服务与配置完成，容器待补 |
+| W1  | 项目骨架    | 服务可启动，`/health` 可用，容器可构建 | ✅ 全部完成（镜像 1.01GB） |
 | W2  | PDF 解析  | 报告转结构化 JSON              | ✅ 21/21 正确 |
 | W3  | 知识库     | 一条命令建库，检索可用              | ✅ 25 条 / 1024 维，top-1 命中 |
 | W4  | 检索增强    | 混合检索 + 重排 + 引用溯源         | ⏳  |
@@ -304,6 +350,14 @@ medcheck/
 ## 踩坑记录
 
 开发过程中真实踩过的坑，按时间倒序记录。这部分会随迭代持续增补。
+
+**容器与部署（W1 补完）**
+
+- `# syntax=docker/dockerfile:1` 这一行会让 BuildKit 额外从 Docker Hub 拉取前端镜像，国内经常报 `auth.docker.io ... Bad Gateway`，整个构建直接失败。**本项目没用任何 BuildKit 新特性，删掉这行即可。**
+- `uv sync` 默认会把包再解压一份到 `/root/.cache/uv/archive-v0`，实测 **543MB**，与 `.venv` 完全重复。加 `--no-cache` 后镜像从 1.77GB 降到 **1.01GB**。
+- uvicorn 不加 `--host 0.0.0.0` 时只监听容器内的 `127.0.0.1`，宿主机端口映射进来访问不到，表现为「容器是 Up 但浏览器打不开」。
+- slim 镜像里没有 `curl`，healthcheck 改用 `python -c "import urllib.request; ..."`，省一个安装步骤。
+- 容器内访问宿主机服务必须用 `host.docker.internal`（`localhost` 指容器自己），Linux 下还要加 `extra_hosts: host.docker.internal:host-gateway`。
 
 **检索与知识库（W3）**
 

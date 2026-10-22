@@ -1,0 +1,28 @@
+# 构建镜像时排除的文件：这些东西要么能重建，要么不该进镜像
+
+# Python 环境与缓存
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# 版本控制
+.git/
+.gitignore
+.gitattributes
+
+# 真实配置（含密钥，绝不能进镜像）
+.env
+
+# 数据：向量库可重建，语料和样本在运行时通过挂载提供
+data/chroma/
+data/raw/
+data/processed/
+data/samples/
+
+# 开发期材料，运行时用不到
+tests/
+eval/
+docker/
+web/
