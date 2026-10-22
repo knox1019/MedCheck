@@ -1,0 +1,42 @@
+{"id": "q01", "query": "华法林的禁忌是什么", "type": "answerable", "expected_drug": "华法林", "expected_section": "禁忌"}
+{"id": "q02", "query": "华法林不能和哪些药一起吃", "type": "answerable", "expected_drug": "华法林", "expected_section": "药物相互作用"}
+{"id": "q03", "query": "服用华法林期间要注意什么", "type": "answerable", "expected_drug": "华法林", "expected_section": "注意事项"}
+{"id": "q04", "query": "阿司匹林什么人不能吃", "type": "answerable", "expected_drug": "阿司匹林", "expected_section": "禁忌"}
+{"id": "q05", "query": "阿司匹林和其他药物有什么相互作用", "type": "answerable", "expected_drug": "阿司匹林", "expected_section": "药物相互作用"}
+{"id": "q06", "query": "氯吡格雷的禁忌症", "type": "answerable", "expected_drug": "氯吡格雷", "expected_section": "禁忌"}
+{"id": "q07", "query": "利伐沙班用药期间注意事项", "type": "answerable", "expected_drug": "利伐沙班", "expected_section": "注意事项"}
+{"id": "q08", "query": "二甲双胍吃的时候要注意什么", "type": "answerable", "expected_drug": "二甲双胍", "expected_section": "注意事项"}
+{"id": "q09", "query": "二甲双胍有哪些禁忌", "type": "answerable", "expected_drug": "二甲双胍", "expected_section": "禁忌"}
+{"id": "q10", "query": "阿卡波糖服用注意事项", "type": "answerable", "expected_drug": "阿卡波糖", "expected_section": "注意事项"}
+{"id": "q11", "query": "阿托伐他汀对肝功能有什么影响", "type": "answerable", "expected_drug": "阿托伐他汀", "expected_section": "注意事项"}
+{"id": "q12", "query": "瑞舒伐他汀的禁忌", "type": "answerable", "expected_drug": "瑞舒伐他汀", "expected_section": "禁忌"}
+{"id": "q13", "query": "氨氯地平用药要注意什么", "type": "answerable", "expected_drug": "氨氯地平", "expected_section": "注意事项"}
+{"id": "q14", "query": "卡托普利什么情况不能用", "type": "answerable", "expected_drug": "卡托普利", "expected_section": "禁忌"}
+{"id": "q15", "query": "美托洛尔使用时需要注意什么", "type": "answerable", "expected_drug": "美托洛尔", "expected_section": "注意事项"}
+{"id": "q16", "query": "呋塞米和其他药物的相互作用", "type": "answerable", "expected_drug": "呋塞米", "expected_section": "药物相互作用"}
+{"id": "q17", "query": "螺内酯服用注意事项", "type": "answerable", "expected_drug": "螺内酯", "expected_section": "注意事项"}
+{"id": "q18", "query": "地高辛用药注意事项", "type": "answerable", "expected_drug": "地高辛", "expected_section": "注意事项"}
+{"id": "q19", "query": "硝酸甘油的禁忌", "type": "answerable", "expected_drug": "硝酸甘油", "expected_section": "禁忌"}
+{"id": "q20", "query": "奥美拉唑和其他药有什么相互作用", "type": "answerable", "expected_drug": "奥美拉唑", "expected_section": "药物相互作用"}
+{"id": "q21", "query": "多潘立酮什么人禁用", "type": "answerable", "expected_drug": "多潘立酮", "expected_section": "禁忌"}
+{"id": "q22", "query": "蒙脱石散怎么服用要注意什么", "type": "answerable", "expected_drug": "蒙脱石散", "expected_section": "注意事项"}
+{"id": "q23", "query": "阿莫西林过敏的人能用吗", "type": "answerable", "expected_drug": "阿莫西林", "expected_section": "禁忌"}
+{"id": "q24", "query": "头孢克肟的药物相互作用", "type": "answerable", "expected_drug": "头孢克肟", "expected_section": "药物相互作用"}
+{"id": "q25", "query": "阿奇霉素用药注意事项", "type": "answerable", "expected_drug": "阿奇霉素", "expected_section": "注意事项"}
+{"id": "q26", "query": "左氧氟沙星的禁忌", "type": "answerable", "expected_drug": "左氧氟沙星", "expected_section": "禁忌"}
+{"id": "q27", "query": "甲硝唑能和酒一起用吗", "type": "answerable", "expected_drug": "甲硝唑", "expected_section": "药物相互作用"}
+{"id": "q28", "query": "氯雷他定服用注意事项", "type": "answerable", "expected_drug": "氯雷他定", "expected_section": "注意事项"}
+{"id": "q29", "query": "左甲状腺素钠什么时候吃要注意什么", "type": "answerable", "expected_drug": "左甲状腺素钠", "expected_section": "注意事项"}
+{"id": "q30", "query": "对乙酰氨基酚的禁忌", "type": "answerable", "expected_drug": "对乙酰氨基酚", "expected_section": "禁忌"}
+{"id": "q31", "query": "布洛芬长期吃要注意什么", "type": "answerable", "expected_drug": "布洛芬", "expected_section": "注意事项"}
+{"id": "q32", "query": "别嘌醇的禁忌是什么", "type": "refuse_unsupported", "unsupported_drug": "别嘌醇"}
+{"id": "q33", "query": "非布司他能长期吃吗", "type": "refuse_unsupported", "unsupported_drug": "非布司他"}
+{"id": "q34", "query": "辛伐他汀的注意事项", "type": "refuse_unsupported", "unsupported_drug": "辛伐他汀"}
+{"id": "q35", "query": "格列美脲有什么禁忌", "type": "refuse_unsupported", "unsupported_drug": "格列美脲"}
+{"id": "q36", "query": "头孢呋辛的相互作用", "type": "refuse_unsupported", "unsupported_drug": "头孢呋辛"}
+{"id": "q37", "query": "缬沙坦服用注意事项", "type": "refuse_unsupported", "unsupported_drug": "缬沙坦"}
+{"id": "q38", "query": "今天杭州天气怎么样", "type": "refuse_offtopic"}
+{"id": "q39", "query": "红烧肉怎么做才好吃", "type": "refuse_offtopic"}
+{"id": "q40", "query": "怎么用 Python 读取 Excel 文件", "type": "refuse_offtopic"}
+{"id": "q41", "query": "帮我写一份年终总结", "type": "refuse_offtopic"}
+{"id": "q42", "query": "推荐几部好看的科幻电影", "type": "refuse_offtopic"}

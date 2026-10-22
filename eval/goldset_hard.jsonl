@@ -1,0 +1,27 @@
+{"id": "h01", "query": "华法林吃了牙龈老出血怎么办", "type": "answerable", "expected_drug": "华法林", "expected_section": "注意事项", "why": "用症状描述，不含章节关键词"}
+{"id": "h02", "query": "阿托伐他汀吃完肌肉酸痛", "type": "answerable", "expected_drug": "阿托伐他汀", "expected_section": "注意事项", "why": "口语化症状，不含章节关键词"}
+{"id": "h03", "query": "吃甲硝唑以后喝酒会怎么样", "type": "answerable", "expected_drug": "甲硝唑", "expected_section": "药物相互作用", "acceptable_sections": ["药物相互作用", "注意事项"], "why": "两章都写了双硫仑样反应：相互作用讲机制，注意事项给了停药后3日的窗口和具体症状。两章都算对"}
+{"id": "h04", "query": "阿司匹林会不会把胃吃坏", "type": "answerable", "expected_drug": "阿司匹林", "expected_section": "注意事项", "why": "口语化，症状隐含"}
+{"id": "h05", "query": "地高辛中毒有什么表现", "type": "answerable", "expected_drug": "地高辛", "expected_section": "注意事项", "why": "问中毒表现，需语义匹配"}
+{"id": "h06", "query": "呋塞米会不会引起低钾", "type": "answerable", "expected_drug": "呋塞米", "expected_section": "注意事项", "why": "具体不良反应，非章节词"}
+{"id": "h07", "query": "硝酸甘油怎么含服才有效", "type": "answerable", "expected_drug": "硝酸甘油", "expected_section": "注意事项", "why": "问用法"}
+{"id": "h08", "query": "左甲状腺素和钙片一起吃有影响吗", "type": "answerable", "expected_drug": "左甲状腺素钠", "expected_section": "药物相互作用", "why": "联用场景，不含「相互作用」"}
+{"id": "h09", "query": "蒙脱石散需要空腹吃吗", "type": "answerable", "expected_drug": "蒙脱石散", "expected_section": "注意事项", "why": "问服用时机"}
+{"id": "h10", "query": "氯雷他定吃了会犯困吗", "type": "answerable", "expected_drug": "氯雷他定", "expected_section": "注意事项", "why": "常见副作用口语问法"}
+{"id": "h11", "query": "布洛芬和激素一起用有什么风险", "type": "answerable", "expected_drug": "布洛芬", "expected_section": "药物相互作用", "why": "联用风险"}
+{"id": "h12", "query": "奥美拉唑长期吃会不会有影响", "type": "answerable", "expected_drug": "奥美拉唑", "expected_section": "注意事项", "why": "长期用药关切"}
+{"id": "h13", "query": "利伐沙班漏服了怎么办", "type": "answerable", "expected_drug": "利伐沙班", "expected_section": "注意事项", "why": "漏服处理"}
+{"id": "h14", "query": "二甲双胍做造影检查前要停吗", "type": "answerable", "expected_drug": "二甲双胍", "expected_section": "注意事项", "why": "特定临床场景"}
+{"id": "h15", "query": "阿奇霉素对心脏有影响吗", "type": "answerable", "expected_drug": "阿奇霉素", "expected_section": "注意事项", "why": "心脏不良反应"}
+{"id": "h16", "query": "瑞舒伐他汀会引起血糖升高吗", "type": "answerable", "expected_drug": "瑞舒伐他汀", "expected_section": "注意事项", "why": "与他汀类同名药易混淆"}
+{"id": "h17", "query": "氯沙坦吃了干咳正常吗", "type": "answerable", "expected_drug": "氯沙坦", "expected_section": "注意事项", "why": "与卡托普利同属降压，易混"}
+{"id": "h18", "query": "头孢克肟和酒能一起吗", "type": "answerable", "expected_drug": "头孢克肟", "expected_section": "药物相互作用", "why": "饮酒禁忌场景"}
+{"id": "h19", "query": "多潘立酮会导致心脏问题吗", "type": "answerable", "expected_drug": "多潘立酮", "expected_section": "注意事项", "why": "心脏风险"}
+{"id": "h20", "query": "对乙酰氨基酚吃多了伤肝吗", "type": "answerable", "expected_drug": "对乙酰氨基酚", "expected_section": "注意事项", "why": "过量肝损"}
+{"id": "h21", "query": "非布司他吃了会过敏吗", "type": "refuse_unsupported", "unsupported_drug": "非布司他"}
+{"id": "h22", "query": "辛伐他汀和柚子能一起吃吗", "type": "refuse_unsupported", "unsupported_drug": "辛伐他汀"}
+{"id": "h23", "query": "缬沙坦漏服要补吗", "type": "refuse_unsupported", "unsupported_drug": "缬沙坦"}
+{"id": "h24", "query": "格列美脲会不会引起低血糖", "type": "refuse_unsupported", "unsupported_drug": "格列美脲"}
+{"id": "h25", "query": "今天股票行情怎么样", "type": "refuse_offtopic"}
+{"id": "h26", "query": "帮我翻译一段英文", "type": "refuse_offtopic"}
+{"id": "h27", "query": "明天会下雨吗", "type": "refuse_offtopic"}
