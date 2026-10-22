@@ -1,6 +1,6 @@
 """检索编排：门控 → 向量检索 → 相关度判断。
 
-这是 W3 的 search 脚本和 W5 的问答接口共用的检索层。
+这是 search 脚本和后续问答接口共用的检索层。
 对外只暴露 retrieve()，返回结果自带「能不能回答」的判断。
 
 三层防线，顺序不能反：
@@ -12,6 +12,8 @@
 为什么实体门控必须排在阈值前面：
     实测「药不在库」的相似度最高到 0.667，而「相关」最低是 0.684，
     两者只差 0.017。靠阈值区分不了，但靠药名匹配可以 100% 区分。
+
+⚠️ 「库内有哪些药」从 Chroma 元数据实时读取，不硬编码。
 """
 
 from dataclasses import dataclass, field
@@ -51,6 +53,21 @@ class RetrieveResult:
         return self.hits[0]["similarity"] if self.hits else None
 
 
+def supported_drugs(collection) -> set[str]:
+    """从向量库的元数据里读出「实际收录了哪些药」。
+
+    这是刻意设计成动态读取的：语料一改，门控自动跟着变，
+    不需要再回来改代码。早期把药名清单硬编码，结果语料扩充后
+    出现了「已入库的药仍被判为未收录」的矛盾。
+    """
+    data = collection.get(include=["metadatas"])
+    return {
+        meta["drug"]
+        for meta in (data.get("metadatas") or [])
+        if meta and "drug" in meta
+    }
+
+
 def retrieve(
     query: str,
     top_k: int = 5,
@@ -70,8 +87,11 @@ def retrieve(
 
     result = RetrieveResult(query=query)
 
+    if collection is None:
+        collection = get(get_client(settings.chroma_dir))
+
     # ---- 第一层：实体门控 ----
-    result.drug_match = resolve_drugs(query)
+    result.drug_match = resolve_drugs(query, supported_drugs(collection))
 
     if result.drug_match.only_unknown:
         names = "、".join(result.drug_match.unsupported)
@@ -80,19 +100,23 @@ def retrieve(
         return result
 
     # ---- 第二层：元数据过滤 ----
-    target_drug = drug or result.drug_match.primary
-    where = {"drug": target_drug} if target_drug else None
-
-    if collection is None:
-        collection = get(get_client(settings.chroma_dir))
+    # 命中多个药时用 $in 一起检索，而不是只取第一个——
+    # 「布洛芬和阿司匹林能一起吃吗」这类问题，两种药的资料都需要。
+    target_drugs = [drug] if drug else result.drug_match.matched
+    if len(target_drugs) == 1:
+        where = {"drug": target_drugs[0]}
+    elif len(target_drugs) > 1:
+        where = {"drug": {"$in": target_drugs}}
+    else:
+        where = None
 
     query_vector = Embedder().embed_one(query)
     hits = search(collection, query_vector, top_k=top_k, where=where)
 
-    # 指定了药品却一条都没检到，说明语料里这个药其实没有对应章节
-    if target_drug and not hits:
+    # 指定了药品却一条都没检到，说明这个药在库里没有对应章节
+    if target_drugs and not hits:
         result.answerable = False
-        result.reason = f"「{target_drug}」在知识库中没有匹配的章节"
+        result.reason = f"「{'、'.join(target_drugs)}」在知识库中没有匹配的章节"
         return result
 
     result.hits = hits
@@ -114,9 +138,9 @@ def retrieve(
     result.answerable = True
     if result.drug_match.has_unknown:
         names = "、".join(result.drug_match.unsupported)
-        result.reason = f"已基于「{target_drug}」的资料检索；注意「{names}」未收录"
-    elif target_drug:
-        result.reason = f"命中「{target_drug}」的说明书章节"
+        result.reason = f"已基于「{'、'.join(target_drugs)}」的资料检索；注意「{names}」未收录"
+    elif target_drugs:
+        result.reason = f"命中「{'、'.join(target_drugs)}」的说明书章节"
     else:
         result.reason = "未识别出具体药品，已按语义相似度检索"
 
