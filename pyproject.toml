@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.156.8",
+    "pdfplumber>=0.11.10",
     "pydantic-settings>=2.16.1",
+    "pymupdf>=2.0",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -19,3 +21,7 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
