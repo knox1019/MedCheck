@@ -47,6 +47,18 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     app_version: str = "0.1.0"
 
+    # ---- Embedding ----
+    # 换后端只改这三个值，业务代码一行不用动。
+    # Ollama 和云端 API 都是 OpenAI 兼容协议，所以写法完全一致。
+    embedding_base_url: str = "http://localhost:11434/v1"
+    embedding_model: str = "bge-m3"
+    # Ollama 不校验这个值，但客户端要求非空，填任意字符串都可以
+    embedding_api_key: str = "ollama"
+
+    # ---- 向量库 ----
+    # 用绝对路径，避免换个目录执行命令就把库建到别处去
+    chroma_dir: str = str(BASE_DIR / "data" / "chroma")
+
 
 @lru_cache
 def get_settings() -> Settings:

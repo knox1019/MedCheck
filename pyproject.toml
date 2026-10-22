@@ -5,7 +5,9 @@ description = "医疗 RAG + Agent：体检报告解读与用药禁忌核查"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "chromadb>=1.5.9",
     "fastapi>=0.156.8",
+    "httpx>=0.28.1",
     "pdfplumber>=0.11.10",
     "pydantic-settings>=2.16.1",
     "pymupdf>=2.0",

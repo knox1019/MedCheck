@@ -11,6 +11,9 @@ __pycache__/
 data/raw/
 data/processed/
 
+# 向量库（可由 scripts/build_index.py 重新生成，不需要进库）
+data/chroma/
+
 # 工具
 .pytest_cache/
 .ruff_cache/
