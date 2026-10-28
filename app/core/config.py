@@ -79,6 +79,15 @@ class Settings(BaseSettings):
     # 本地小模型在 CPU 上生成较慢，超时给足
     llm_timeout: float = 180.0
 
+    # ---- 思考模式（只有云端推理模型用得上，本地 Ollama 留空）----
+    # 空字符串 = 这个参数根本不发给 API，用服务端默认值。
+    # 云端推理模型可选 low / high / max，控制思考深度；越深越慢越贵。
+    # 注意：DeepSeek 的推理模型默认就开着思考，留空不等于关闭。
+    llm_reasoning_effort: str = ""
+    # 思考开关："enabled" / "disabled"。空 = 不传。
+    # 想省钱省时间就显式设成 disabled，走非思考模式。
+    llm_thinking: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
