@@ -252,11 +252,14 @@ class _StubPrimary:
 
 
 def test_fallback_switches_when_primary_exhausts_retries():
-    """主模型「重试耗尽」（网络不通 / 5xx 的统一出口）→ 切备用模型。"""
-    fallback = ChatClient(base_url="http://localhost:11434/v1", model="qwen2.5:7b")
+    """主模型「重试耗尽」（网络不通 / 5xx 的统一出口）→ 切备用模型。
+
+    备用模型用 stub 而不是真实 ChatClient：这些是单元测试，
+    一旦真发 HTTP，CI（没有 Ollama）和干净机器上就会随机失败。
+    """
     wrapper = client_module.FallbackChatClient(
         _StubPrimary("cn:hy3", [RuntimeError("大模型连续失败 3 次")]),
-        fallback,
+        _StubPrimary("qwen2.5:7b", [ChatReply(content="备用模型的回答", model="qwen2.5:7b")]),
     )
 
     reply = wrapper.complete([{"role": "user", "content": "hi"}])
@@ -270,7 +273,7 @@ def test_fallback_switches_on_malformed_primary_response():
     """主模型返回的不是 OpenAI 协议格式（网关坏了）→ 也切。"""
     wrapper = client_module.FallbackChatClient(
         _StubPrimary("cn:hy3", [RuntimeError("大模型响应格式异常：<html>…")]),
-        ChatClient(base_url="http://localhost:11434/v1", model="qwen2.5:7b"),
+        _StubPrimary("qwen2.5:7b", [ChatReply(content="备用模型的回答", model="qwen2.5:7b")]),
     )
 
     reply = wrapper.complete([{"role": "user", "content": "hi"}])
