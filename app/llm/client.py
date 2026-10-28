@@ -57,10 +57,15 @@ class ChatReply:
     content: str  # 最终答案
     reasoning: str = ""  # 思维链，非推理模型为空
     usage: dict = field(default_factory=dict)  # token 用量，部分后端不返回
+    tool_calls: tuple[dict, ...] = ()  # 模型要求调用的工具，没有则为空
 
     @property
     def has_reasoning(self) -> bool:
         return bool(self.reasoning.strip())
+
+    @property
+    def has_tool_calls(self) -> bool:
+        return bool(self.tool_calls)
 
     @property
     def reasoning_tokens(self) -> int:
@@ -71,12 +76,15 @@ class ChatReply:
     def as_assistant_message(self) -> dict:
         """转成可回传给下一轮请求的 assistant 消息。
 
-        带 tools 的多轮循环里必须用它，而不是自己拼 {"role": "assistant", "content": ...}——
-        少了 reasoning_content 会被 API 判 400。
+        带 tools 的多轮循环里必须用它，而不是自己拼 {"role": "assistant", "content": ...}：
+            · 少了 reasoning_content，思考模式 + tools 会直接返回 400
+            · 少了 tool_calls，下一轮的 tool 消息就对不上调用方
         """
         message: dict = {"role": "assistant", "content": self.content}
         if self.reasoning:
             message["reasoning_content"] = self.reasoning
+        if self.tool_calls:
+            message["tool_calls"] = list(self.tool_calls)
         return message
 
 
@@ -115,7 +123,7 @@ class ChatClient:
         """
         return bool(self.reasoning_effort) or self.thinking == "enabled"
 
-    def _build_payload(self, messages: list[dict]) -> dict:
+    def _build_payload(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
         payload: dict = {
             "model": self.model,
             "messages": messages,
@@ -133,13 +141,15 @@ class ChatClient:
             payload["reasoning_effort"] = self.reasoning_effort
         if self.thinking:
             payload["thinking"] = {"type": self.thinking}
+        if tools:
+            payload["tools"] = tools
 
         return payload
 
-    def complete(self, messages: list[dict]) -> ChatReply:
-        """发一轮对话，返回答案和思维链。"""
+    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> ChatReply:
+        """发一轮对话，返回答案、思维链和工具调用请求。"""
         url = f"{self.base_url}/chat/completions"
-        payload = self._build_payload(messages)
+        payload = self._build_payload(messages, tools=tools)
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -179,11 +189,15 @@ class ChatClient:
         # 推理模型的思维链在 reasoning_content，普通模型的 content 则直接是答案
         reasoning = (message.get("reasoning_content") or "").strip()
         content = (message.get("content") or "").strip()
+        tool_calls = tuple(message.get("tool_calls") or ())
 
-        # 思考模式下如果 max_tokens 太小，可能出现「思考完但没输出答案」。
-        # 这种情况必须报错，不能静默返回空串——上层会把空串当成拒答，
+        # 模型决定先调工具时，content 本来就是空的——这是正常流程，不是故障。
+        # 只有「既没有答案、也没要求调工具」才是真异常。
+        #
+        # 这种情况通常是 max_tokens 给小了：思考把小模型「想完了」，输出被截断。
+        # 必须报错而不是静默返回空串——上层会把空串当成拒答，
         # 于是「配置错了」被伪装成「资料不足」，排查方向就全歪了。
-        if not content:
+        if not content and not tool_calls:
             raise RuntimeError(
                 f"模型返回空答案（finish_reason={choice.get('finish_reason')}），"
                 f"思考内容 {len(reasoning)} 字，通常是 max_tokens 给得太小"
@@ -191,18 +205,17 @@ class ChatClient:
 
         if reasoning:
             logger.info(
-                "思考过程 %s 字，答案 %s 字，思考 token %s",
+                "思考过程 %s 字，答案 %s 字，工具调用 %s 个",
                 len(reasoning),
                 len(content),
-                (data.get("usage") or {})
-                .get("completion_tokens_details", {})
-                .get("reasoning_tokens", "?"),
+                len(tool_calls),
             )
 
         return ChatReply(
             content=content,
             reasoning=reasoning,
             usage=data.get("usage") or {},
+            tool_calls=tool_calls,
         )
 
     def chat(self, messages: list[dict]) -> str:
