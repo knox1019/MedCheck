@@ -12,6 +12,8 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  # 允许在 Actions 页面手动点 "Run workflow" 触发（调试图）
+  workflow_dispatch:
 
 jobs:
   test:
