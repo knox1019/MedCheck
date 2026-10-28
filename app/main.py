@@ -14,6 +14,7 @@ import logging
 
 from fastapi import FastAPI
 
+from app.api.routes import router as api_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 
@@ -37,6 +38,10 @@ logger.info(
 
 # version 从配置读取，这个值会显示在 /docs 自动生成的接口文档页面上
 app = FastAPI(title="MedCheck", version=settings.app_version)
+
+# 业务接口挂在 /api 下，和 /health 区分开：
+# 健康检查是给编排系统用的，业务接口是给调用方用的，两者的可用性要求不同。
+app.include_router(api_router)
 
 
 @app.get("/health")

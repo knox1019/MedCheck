@@ -1081,12 +1081,74 @@ messages.append(reply.as_assistant_message())   # 带 content + reasoning_conten
 
 ## 接口
 
-| 方法   | 路径                  | 说明                 | 状态  |
-| ---- | ------------------- | ------------------ | --- |
-| GET  | `/health`           | 健康检查，返回运行环境与版本     | ✅   |
-| GET  | `/docs`             | 自动生成的 Swagger 文档   | ✅   |
-| POST | `/api/report/parse` | 上传体检报告 PDF，返回结构化指标 | ⏳ 解析逻辑已完成，HTTP 接口待封装 |
-| POST | `/api/chat`         | 问答，返回带引用的答案        | ⏳   |
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/health` | 健康检查，返回运行环境与版本 |
+| GET | `/docs` | 自动生成的 Swagger 文档，可直接在页面上试 |
+| POST | `/api/report/parse` | 上传体检报告 PDF，返回结构化指标 |
+| POST | `/api/chat` | 问答，返回答案 + 出处 +（Agent 模式）工具调用记录 |
+
+```bash
+uv run uvicorn app.main:app --reload        # 启动后打开 http://127.0.0.1:8000/docs
+```
+
+### 两个刻意的设计
+
+**① 无状态**
+
+报告由调用方持有并回传，服务端不存会话：
+
+```bash
+# 第一步：上传，拿到结构化报告
+curl -X POST http://127.0.0.1:8000/api/report/parse -F "file=@report.pdf"
+# → {"report": {"report_id": "...", "items": [...]}}
+
+# 第二步：把 report 原样带回来提问
+curl -X POST http://127.0.0.1:8000/api/chat -H "Content-Type: application/json" -d '{
+  "question": "转氨酶偏高和我在吃的阿托伐他汀有关系吗",
+  "report": { ...上一步的返回值... },
+  "medications": ["阿托伐他汀"]
+}'
+# → {"mode": "agent", "answer": "...", "citations": [...], "steps": [...]}
+```
+
+多实例部署时不用共享存储，重启也不丢数据。代价是请求体大一点——体检报告 21 项约 4KB，可以接受。
+
+**② 问答路由是同步函数（`def` 而不是 `async def`）**
+
+大模型调用是阻塞的，写成 `async def` 会卡住事件循环，**整个服务在等模型时无法响应其他请求**（包括 `/health`，容器会因此被判为不健康而重启）。
+
+用 `def` 时 FastAPI 会自动放进线程池。唯一用 `async def` 的是解析接口，因为要 `await file.read()`。
+
+### 走哪条路是自动判断的
+
+| 请求内容 | 路径 | 理由 |
+| --- | --- | --- |
+| 只问药物 | `qa`（检索→生成） | 多一次模型决策只会更慢，不会更准 |
+| 带报告或用药 | `agent`（模型自主调工具） | 需要查几次、查哪一章，只有模型知道 |
+
+可以用 `mode` 强制指定：`"qa"` 走快速路径，`"agent"` 强制走工具编排。
+
+### 状态码的含义
+
+| 码 | 含义 | 谁来处理 |
+| --- | --- | --- |
+| 400 | 上传的不是 PDF / 文件为空 | 调用方 |
+| 413 | 超过 20MB | 调用方 |
+| 422 | PDF 内容无法解析（坏文件）、请求体校验失败 | 调用方 |
+| 503 | **模型服务不可用**（Ollama 没起、API key 失效、超时） | 运维查依赖服务 |
+
+503 和 500 必须分开：503 表示「重试可能有用，去查依赖」，500 表示「服务端代码有 bug」。混在一起，运维会查错方向。
+
+### 实测
+
+```
+POST /api/report/parse   0.4s   → 21 项指标，11 项异常，report_id 取自条码号
+POST /api/chat (qa)      13s    → 华法林禁忌，引用 1 条
+POST /api/chat (agent)   26s    → 自动调 check_indicators，引用 2 条
+```
+
+Agent 那条的答案里，模型自己算出 ALT 68 未达「上限 3 倍」，并明确「资料不足以判断因果关系」。
 
 ## 技术栈
 
@@ -1113,7 +1175,9 @@ messages.append(reply.as_assistant_message())   # 带 content + reasoning_conten
 medcheck/
 ├── app/
 │   ├── main.py              # FastAPI 入口，启动链路的组装处
-│   ├── api/                 # 路由（后续从 main.py 拆分）
+│   ├── api/
+│   │   ├── routes.py         # 两个业务接口：解析报告 / 问答
+│   │   └── schemas.py        # 请求与响应的数据契约
 │   ├── core/
 │   │   ├── config.py        # 配置：环境变量 > .env > 默认值
 │   │   └── logging.py       # 结构化日志配置
