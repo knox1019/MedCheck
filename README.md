@@ -25,6 +25,7 @@ MedCheck 想解决的问题只有两个：
 ![MedCheck 分层架构](docs/architecture.svg)
 
 > 现场演示流程见 [docs/demo.md](docs/demo.md)（5 分钟脚本 + 高频追问应答）。
+> 换一台电脑部署见 [SETUP.md](SETUP.md)（两种方式 + 常见问题速查）。
 
 ## 现在能做什么
 
