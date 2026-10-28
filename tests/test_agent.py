@@ -304,3 +304,93 @@ def test_user_message_skips_context_when_absent(collection):
     assert "体检报告" not in text
     assert "在服药物" not in text
     assert "华法林的禁忌" in text
+
+
+def test_loop_treats_unavailable_drug_as_refusal(ctx):
+    """工具说「未收录」也算拒答，不能只认「资料中未提及」一个短语。
+
+    实测漏判过一次：答案「知识库未收录『格列本脲』，无法提供该药的禁忌资料」
+    被判成「作答」，评测显示失败——其实模型行为完全正确。
+    Agent 会转述工具返回的原文，措辞比固定流程多样得多。
+    """
+    client = _FakeClient([
+        ChatReply(content="", tool_calls=(_call("search_drug_label", {"drug": "别嘌醇"}),)),
+        ChatReply(content="知识库未收录「别嘌醇」，无法提供该药的禁忌资料。"),
+    ])
+    result = run("别嘌醇的禁忌", ctx, client=client)
+
+    assert result.refused is True
+    assert result.citations == []
+
+
+def test_loop_treats_no_evidence_from_tools_as_refusal(ctx):
+    """调了工具但一条资料都没拿到，必然是拒答——不管它用了什么措辞。"""
+    client = _FakeClient([
+        ChatReply(content="", tool_calls=(_call("search_drug_label", {"drug": "别嘌醇"}),)),
+        ChatReply(content="这个药我查不到。"),
+    ])
+    result = run("别嘌醇的禁忌", ctx, client=client)
+
+    assert result.refused is True
+
+
+def test_loop_treats_off_topic_reply_as_refusal(ctx):
+    """没调工具的跑题问题，靠拒绝性措辞识别。"""
+    client = _FakeClient([ChatReply(content="我只能回答药品相关问题，无法回答天气问题。")])
+    result = run("今天杭州天气怎么样", ctx, client=client)
+
+    assert result.refused is True
+
+
+def test_loop_does_not_mark_cautious_answer_as_refusal(ctx):
+    """给出实质内容但措辞谨慎（「资料不足以判断因果关系」）不算拒答。
+
+    这类答案有依据、有引用，只是对因果性保持克制——
+    判成拒答会让「克制」和「不会答」混为一谈。
+    """
+    client = _FakeClient([
+        ChatReply(content="", tool_calls=(_call("search_drug_label", {"drug": "华法林"}),)),
+        ChatReply(content="说明书要求监测 INR [1]，但资料不足以判断因果关系。"),
+    ])
+    result = run("华法林要注意什么", ctx, client=client)
+
+    assert result.refused is False
+    assert result.cited is True
+
+
+def test_loop_does_not_treat_partial_caveat_as_refusal(ctx):
+    """「作答 + 补一句某点未提及」不算拒答。
+
+    实测踩过：答案「会。根据说明书……诱发消化道溃疡出血[1]。
+    资料中未提及短期规范用药是否会损伤胃。」被判成拒答——
+    主体明明答了，只是对边界保持克制。
+    """
+    client = _FakeClient([
+        ChatReply(content="", tool_calls=(_call("search_drug_label", {"drug": "阿司匹林"}),)),
+        ChatReply(
+            content="会。长期大量用药可诱发消化道溃疡出血[1]。"
+                    "资料中未提及短期规范用药是否会损伤胃。"
+        ),
+    ])
+    result = run("阿司匹林会不会把胃吃坏", ctx, client=client)
+
+    assert result.refused is False
+    assert result.cited is True
+
+
+def test_loop_treats_capability_disclaimer_as_refusal(ctx):
+    """寒暄式问题的能力外声明算拒答（没调工具、没资料的情况下）。"""
+    client = _FakeClient([ChatReply(content="这属于天气问题，我无法回答，只能查药品说明书。")])
+    result = run("今天天气怎么样", ctx, client=client)
+
+    assert result.refused is True
+
+
+def test_loop_answers_greeting_as_not_refusal(ctx):
+    """寒暄没有调用工具、也没有资料，但那是正面回答，不是拒答。"""
+    client = _FakeClient([
+        ChatReply(content="你好！我可以帮你查药品说明书、核对体检指标与用药的关联。")
+    ])
+    result = run("你好，你能做什么", ctx, client=client)
+
+    assert result.refused is False

@@ -1,0 +1,60 @@
+{
+  "model": "cn:hy3",
+  "total": 2,
+  "tool_ok": 2,
+  "behavior_ok": 2,
+  "cited": 1,
+  "n_answered": 2,
+  "n_citable": 1,
+  "n_extra": 0,
+  "converged": 2,
+  "avg_steps": 0.5,
+  "avg_turns": 1.5,
+  "latency_median": 4.936616600025445,
+  "records": [
+    {
+      "id": "ag01",
+      "question": "华法林的禁忌是什么",
+      "error": "",
+      "tool_ok": true,
+      "behavior_ok": true,
+      "cited": true,
+      "refused": false,
+      "turns": 2,
+      "n_steps": 1,
+      "used": [
+        "search_drug_label"
+      ],
+      "expected": [
+        "search_drug_label"
+      ],
+      "missing": [],
+      "extra": [],
+      "converged": true,
+      "n_hits": 1,
+      "expect_refuse": false,
+      "elapsed": 5.108508500037715,
+      "answer": "华法林【禁忌】[1]：\n- 肝肾功能损害、严重高血压、凝血功能障碍伴有出血倾向、活动性溃疡、外伤、先兆流产、近期手术者禁用；\n- 妊娠期禁用；\n- 各种原因的维生素K缺乏症患者，以及脑脊髓、眼科手术患者原则上也禁用。\n\n来源：华法林钠片说明书[1]"
+    },
+    {
+      "id": "ag10",
+      "question": "你好，你能做什么",
+      "error": "",
+      "tool_ok": true,
+      "behavior_ok": true,
+      "cited": false,
+      "refused": false,
+      "turns": 1,
+      "n_steps": 0,
+      "used": [],
+      "expected": [],
+      "missing": [],
+      "extra": [],
+      "converged": true,
+      "n_hits": 0,
+      "expect_refuse": false,
+      "elapsed": 4.764724700013176,
+      "answer": "我是体检报告解读助手，可以帮你做这些事：\n\n1. **解读体检报告**：帮你理解报告中的异常指标。\n2. **查阅药品说明书**：根据药名查询药品的禁忌、注意事项、不良反应、药物相互作用等章节原文（支持别名查询，如「华法令」等同「华法林」）。\n3. **核对指标与用药关联**：对照你正在服用的药物，核对体检报告中的异常指标在说明书层面是否与药物有关联（仅返回说明书原文，不作诊断）。\n\n需要我帮忙时"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{"id": "ag01", "question": "华法林的禁忌是什么", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": [], "expect_refuse": false, "why": "标准单药查询，只需一次查说明书"}
+{"id": "ag02", "question": "阿司匹林会不会把胃吃坏", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": [], "expect_refuse": false, "why": "口语化提问，仍需查说明书"}
+{"id": "ag03", "question": "华法林和什么药不能一起吃", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": ["search_drug_label"], "expect_refuse": false, "why": "药物相互作用，可能只查一个药"}
+{"id": "ag04", "question": "布洛芬和阿司匹林能一起吃吗", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": ["search_drug_label"], "expect_refuse": false, "why": "两药对比，期望查两次"}
+{"id": "ag05", "question": "二甲双胍怎么吃要注意什么", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": [], "expect_refuse": false, "why": "注意事项查询"}
+{"id": "ag06", "question": "氯吡格雷的禁忌", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": [], "expect_refuse": false, "why": "抗血小板药，禁忌查询"}
+{"id": "ag07", "question": "格列本脲的禁忌是什么", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": ["list_available_drugs"], "expect_refuse": true, "why": "库内缺口药，查不到后允许用 list 确认药名"}
+{"id": "ag08", "question": "甲钴胺能长期吃吗", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": ["list_available_drugs"], "expect_refuse": true, "why": "库内缺口药"}
+{"id": "ag09", "question": "阿昔洛韦的注意事项", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": ["list_available_drugs"], "expect_refuse": true, "why": "库内缺口药"}
+{"id": "ag10", "question": "你好，你能做什么", "context": "none", "expect_tools": [], "allow_extra": [], "expect_refuse": false, "why": "寒暄，不该调用任何工具"}
+{"id": "ag11", "question": "今天杭州天气怎么样", "context": "none", "expect_tools": [], "allow_extra": [], "expect_refuse": true, "why": "完全无关，不该调工具也不该编"}
+{"id": "ag12", "question": "我报告里转氨酶偏高，和我在吃的阿托伐他汀有关系吗", "context": "report+meds", "expect_tools": ["check_indicators"], "allow_extra": ["search_drug_label"], "expect_refuse": false, "why": "指标与用药关联，核心 Agent 场景", "medications": ["阿托伐他汀"]}
+{"id": "ag13", "question": "我的尿酸高，是不是吃药吃的", "context": "report+meds", "expect_tools": ["check_indicators"], "allow_extra": ["search_drug_label"], "expect_refuse": true, "why": "语料未覆盖：阿托伐他汀各章节不提尿酸，应拒答（首次标注错误，实测核查后修正）", "medications": ["阿托伐他汀"]}
+{"id": "ag14", "question": "血红蛋白偏低要注意什么", "context": "report+meds", "expect_tools": ["check_indicators"], "allow_extra": ["search_drug_label"], "expect_refuse": true, "why": "语料未覆盖：阿托伐他汀各章节不提贫血/血红蛋白，应拒答（首次标注错误，实测核查后修正）", "medications": ["阿托伐他汀"]}
+{"id": "ag15", "question": "我在吃华法林和阿司匹林，最近牙龈出血，要注意什么", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": ["search_drug_label"], "expect_refuse": false, "why": "多药多章节，期望多次查说明书"}
+{"id": "ag16", "question": "华法林和阿司匹林一起吃有什么风险", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": ["search_drug_label"], "expect_refuse": false, "why": "华法林相互作用章节明确写了阿司匹林可增强抗凝作用"}
+{"id": "ag17", "question": "报告里胆固醇也高了，和我吃的药有关吗", "context": "report+meds", "expect_tools": ["check_indicators"], "allow_extra": ["search_drug_label"], "expect_refuse": false, "why": "血脂指标与用药", "medications": ["阿托伐他汀"]}
+{"id": "ag18", "question": "华法林是饭前吃还是饭后吃", "context": "none", "expect_tools": ["search_drug_label"], "allow_extra": [], "expect_refuse": true, "why": "资料未覆盖服药时间，拒答但需要先查过"}

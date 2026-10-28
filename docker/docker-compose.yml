@@ -17,9 +17,22 @@ services:
     environment:
       # 覆盖环境名，方便在 /health 里区分「这个实例是容器跑的」
       APP_ENV: docker
-      # 关键：容器内的 localhost 指容器自己，连不到宿主机的 Ollama。
+
+      # 关键：容器内的 localhost 指容器自己，连不到宿主机上的服务。
       # host.docker.internal 是 Docker Desktop 提供的特殊域名，指向宿主机。
-      EMBEDDING_BASE_URL: http://host.docker.internal:11434/v1
+      #
+      # 下面两个必须一起配，少一个 Agent 就只能在固定流程下工作：
+      EMBEDDING_BASE_URL: http://host.docker.internal:11434/v1   # Ollama（向量化）
+      LLM_BASE_URL: http://host.docker.internal:7863/v1          # 对话模型网关
+      #
+      # 端口按你本机的实际情况改。判断方法：在宿主机上能 curl 通的那个地址，
+      # 把 127.0.0.1 / localhost 换成 host.docker.internal 即可。
+      # 如果对话模型就是 Ollama 本身，这里应该是 http://host.docker.internal:11434/v1
+
+      # 重排模型（约 570MB）的缓存目录。
+      # 不设的话 fastembed 会存到 /tmp，容器一重启就没了 —— 下次请求要重新下载。
+      # 指到挂载出来的 data 目录下，模型一次下载后长期复用。
+      FASTEMBED_CACHE_PATH: /app/data/models
 
     # Linux 下的 Docker 需要显式声明这条映射，Windows 的 Docker Desktop 自带支持
     extra_hosts:

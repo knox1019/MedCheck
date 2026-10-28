@@ -13,6 +13,8 @@ data/processed/
 
 # 向量库（可由 scripts/build_index.py 重新生成，不需要进库）
 data/chroma/
+# 重排模型缓存（约 570MB，容器内挂到这里避免重复下载）
+data/models/
 
 # 工具
 .pytest_cache/

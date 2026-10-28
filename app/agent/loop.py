@@ -30,6 +30,40 @@ from app.rag.citation import Citation
 
 logger = logging.getLogger(__name__)
 
+# Agent 模式下「拒答」的判定不能只看关键词。
+#
+# 踩过两次坑：
+#   1. 只认「资料中未提及」→ 漏判「知识库未收录 X」（工具转述的措辞）
+#   2. 放宽成关键词包含 → 误伤「会。……诱发消化道溃疡出血[1]。
+#      资料中未提及短期规范用药是否会损伤胃。」这种「作答 + 补充边界」的答案
+#
+# 所以判据改成结构性的，而不是找词：
+_OFF_TOPIC_HINTS = ("无法回答", "不能回答", "无法提供", "不属于我的")
+
+
+def _is_refusal(text: str, hits: list[dict], steps: list["AgentStep"]) -> bool:
+    """判断这次答复算不算拒答。
+
+    四条规则，按可靠性从高到低：
+
+        1. 调了工具却一条资料都没拿到  → 拒答（不管措辞）
+        2. 拿到了资料且答案引用了编号  → 明确是作答
+        3. 整段就只有一句拒答短语      → 拒答
+        4. 没调工具（寒暄/跑题）        → 看有没有明确的能力外声明
+    """
+    if steps and not hits:
+        return True
+    if hits and extract_cited_numbers(text):
+        return False
+
+    core = text.strip().strip("。.！! ")
+    if core == REFUSAL_PHRASE:
+        return True
+
+    if not steps and not hits:
+        return any(hint in text for hint in _OFF_TOPIC_HINTS)
+    return False
+
 SYSTEM_PROMPT = f"""你是体检报告解读助手，可以调用工具查阅药品说明书。
 
 【工作方式】
@@ -159,7 +193,7 @@ def run(
 
         if not reply.has_tool_calls:
             result.answer = reply.content
-            result.refused = REFUSAL_PHRASE in reply.content
+            result.refused = _is_refusal(reply.content, ctx.hits, steps)
             numbers = extract_cited_numbers(reply.content)
             result.citations = _citations_from_hits(numbers, ctx.hits)
             result.cited = bool(numbers)
