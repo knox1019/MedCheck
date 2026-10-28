@@ -231,3 +231,26 @@ def test_health_still_works():
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_agent_citations_carry_original_numbers(monkeypatch):
+    """Agent 模式的出处要带上答案里的原始编号。
+
+    前端据此显示 [6] 而不是按数组下标重编成 [1]。
+    """
+    def fake_agent(question, ctx, **kwargs):
+        return AgentResult(
+            question=question,
+            answer="见 [6]。",
+            citations=[Citation(source="某说明书", section="注意事项", chunk_id="c1")],
+            cited_numbers=[6],
+            cited=True,
+            turns=2,
+            steps=[AgentStep(tool="search_drug_label", args={}, output="x")],
+        )
+
+    monkeypatch.setattr(routes, "run_agent", fake_agent)
+    response = client.post("/api/chat", json={"question": "要紧吗", "mode": "agent"})
+
+    assert response.status_code == 200
+    assert response.json()["citations"][0]["number"] == 6

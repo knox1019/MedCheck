@@ -53,14 +53,23 @@ class CitationOut(BaseModel):
     section: str | None = None
     page: int | None = None
     label: str = Field(description="可直接展示的一行文本，如「华法林钠片说明书 · 禁忌」")
+    number: int | None = Field(
+        default=None,
+        description=(
+            "答案里使用的原始编号。多个编号可能指向同一出处（同一章节被多个指标引用），"
+            "此时 citations 去重后只剩一条，但正文里仍写着 [2][4][6]。"
+            "调用方应优先用它显示，而不是按数组下标重新编号。"
+        ),
+    )
 
     @classmethod
-    def from_citation(cls, citation: Citation) -> "CitationOut":
+    def from_citation(cls, citation: Citation, number: int | None = None) -> "CitationOut":
         return cls(
             source=citation.source,
             section=citation.section,
             page=citation.page,
             label=citation.label,
+            number=number,
         )
 
 

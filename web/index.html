@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedCheck · 体检报告与用药核对</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --ink: #1a1d23;
+    --ink-2: #5b6472;
+    --ink-3: #8b95a5;
+    --line: #e5e8ed;
+    --brand: #0f766e;
+    --brand-light: #e6f4f2;
+    --high-bg: #fef3f2;
+    --high-ink: #b42318;
+    --low-bg: #eff6ff;
+    --low-ink: #1d4ed8;
+    --warn-bg: #fffaeb;
+    --warn-ink: #b54708;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0 20px 80px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; }
+
+  header { padding: 48px 0 32px; }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 12px;
+    font-weight: 600;
+    vertical-align: middle;
+    letter-spacing: 0;
+  }
+
+  .lede { margin: 0; color: var(--ink-2); font-size: 15px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .card h2 {
+    margin: 0 0 16px;
+    font-size: 15px;
+    font-weight: 650;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step-no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ---------- 上传区 ---------- */
+  #dropzone {
+    border: 1.5px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 44px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+
+  #dropzone:hover, #dropzone.dragover {
+    border-color: var(--brand);
+    background: var(--brand-light);
+  }
+
+  #dropzone .main { font-weight: 600; margin-bottom: 4px; }
+  #dropzone .sub { color: var(--ink-3); font-size: 13px; }
+
+  /* ---------- 报告 ---------- */
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--ink-3);
+    font-size: 12px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--line);
+  }
+
+  td { padding: 9px 12px; border-bottom: 1px solid #f0f2f5; }
+  tr:last-child td { border-bottom: none; }
+
+  td.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+  tr.abnormal td { background: #fcfcfd; }
+  tr.abnormal.high td:first-child { box-shadow: inset 3px 0 0 var(--high-ink); }
+  tr.abnormal.low td:first-child { box-shadow: inset 3px 0 0 var(--low-ink); }
+
+  .flag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .flag.high { background: var(--high-bg); color: var(--high-ink); }
+  .flag.low { background: var(--low-bg); color: var(--low-ink); }
+  .flag.normal { color: var(--ink-3); font-weight: 400; }
+
+  /* ---------- 用药输入 ---------- */
+  .meds-row { display: flex; gap: 10px; }
+
+  input[type=text] {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  input[type=text]:focus { border-color: var(--brand); }
+
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity .15s;
+    white-space: nowrap;
+  }
+
+  button:hover { opacity: .88; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 0; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 14px;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .chip i { cursor: pointer; font-style: normal; opacity: .6; }
+  .chip i:hover { opacity: 1; }
+
+  .hint { color: var(--ink-3); font-size: 13px; margin-top: 10px; }
+
+  /* ---------- 结果 ---------- */
+  .trace {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    background: #fafbfc;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  .trace .step { display: flex; gap: 8px; align-items: baseline; }
+  .trace .ok { color: var(--brand); }
+  .trace .err { color: var(--high-ink); }
+  .trace code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+
+  #answer {
+    font-size: 15px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  #answer strong { color: var(--ink); }
+
+  .citations { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+  .citations .title { font-size: 12px; color: var(--ink-3); margin-bottom: 8px; }
+
+  .citations div.cite {
+    font-size: 13px;
+    color: var(--ink-2);
+    padding: 2px 0;
+  }
+
+  /* ---------- 状态提示 ---------- */
+  .status {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-top: 14px;
+  }
+
+  .status.loading { background: var(--brand-light); color: var(--brand); }
+  .status.error { background: var(--high-bg); color: var(--high-ink); }
+  .status.warn { background: var(--warn-bg); color: var(--warn-ink); }
+
+  .dots::after {
+    content: '';
+    animation: dots 1.4s steps(4, end) infinite;
+  }
+
+  @keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+  }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--ink-3);
+    line-height: 1.9;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>MedCheck <span>体检报告与用药核对</span></h1>
+    <p class="lede">上传体检报告，核对异常指标与你正在服用的药物之间，说明书层面是否存在关联。所有结论都附带说明书出处。</p>
+  </header>
+
+  <!-- 1. 上传 -->
+  <section class="card" id="step-upload">
+    <h2><span class="step-no">1</span>上传体检报告</h2>
+    <div id="dropzone">
+      <div class="main">拖入 PDF，或点击选择文件</div>
+      <div class="sub">支持单栏检验报告 · 不超过 20MB · 不保存到服务器</div>
+    </div>
+    <input type="file" id="file-input" accept=".pdf" hidden>
+    <div id="upload-status"></div>
+  </section>
+
+  <!-- 2. 报告 -->
+  <section class="card hidden" id="step-report">
+    <h2><span class="step-no">2</span>检查结果</h2>
+    <div class="meta" id="report-meta"></div>
+    <table>
+      <thead>
+        <tr><th>项目</th><th style="text-align:right">结果</th><th>单位</th><th>参考范围</th><th>状态</th></tr>
+      </thead>
+      <tbody id="items-body"></tbody>
+    </table>
+  </section>
+
+  <!-- 3. 用药 -->
+  <section class="card hidden" id="step-meds">
+    <h2><span class="step-no">3</span>你正在服用哪些药？</h2>
+    <div class="meds-row">
+      <input type="text" id="meds-input" placeholder="输入药名后回车，可填多个，例如：阿托伐他汀">
+      <button id="ask-btn">开始核对</button>
+    </div>
+    <div class="chips" id="med-chips"></div>
+    <p class="hint">知识库收录 657 种药。不确定药名可以只填一种，系统会如实告诉你库内是否有资料。</p>
+    <div id="ask-status"></div>
+  </section>
+
+  <!-- 4. 结果 -->
+  <section class="card hidden" id="step-result">
+    <h2><span class="step-no">4</span>核对结果</h2>
+    <div id="trace-box"></div>
+    <div id="answer"></div>
+    <div class="citations hidden" id="cite-box">
+      <div class="title">出处</div>
+      <div id="cite-list"></div>
+    </div>
+  </section>
+
+  <footer>
+    本工具仅依据药品说明书原文给出提示，不构成诊断或用药建议。任何用药调整请咨询医生或药师。
+    <br>数据来源：国家基本药物目录（2018 年版）药品名索引 + 公开药品说明书。
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  const API = '';  // 与页面同源
+
+  const el = {
+    dropzone: document.getElementById('dropzone'),
+    fileInput: document.getElementById('file-input'),
+    uploadStatus: document.getElementById('upload-status'),
+    stepReport: document.getElementById('step-report'),
+    reportMeta: document.getElementById('report-meta'),
+    itemsBody: document.getElementById('items-body'),
+    stepMeds: document.getElementById('step-meds'),
+    medsInput: document.getElementById('meds-input'),
+    medChips: document.getElementById('med-chips'),
+    askBtn: document.getElementById('ask-btn'),
+    askStatus: document.getElementById('ask-status'),
+    stepResult: document.getElementById('step-result'),
+    traceBox: document.getElementById('trace-box'),
+    answer: document.getElementById('answer'),
+    citeBox: document.getElementById('cite-box'),
+    citeList: document.getElementById('cite-list'),
+  };
+
+  let currentReport = null;
+  let medications = [];
+
+  // ---------------- 工具函数 ----------------
+
+  function status(node, kind, text) {
+    node.innerHTML = '';
+    if (!text) return;
+    const div = document.createElement('div');
+    div.className = 'status ' + kind;
+    if (kind === 'loading') {
+      const span = document.createElement('span');
+      span.className = 'dots';
+      span.textContent = text;
+      div.appendChild(span);
+    } else {
+      div.textContent = text;
+    }
+    node.appendChild(div);
+  }
+
+  function flagText(flag) {
+    if (flag === 'high') return '偏高';
+    if (flag === 'low') return '偏低';
+    if (flag === 'normal') return '正常';
+    return '未知';
+  }
+
+  function refText(item) {
+    if (item.ref_low != null && item.ref_high != null) return item.ref_low + '–' + item.ref_high;
+    if (item.ref_high != null) return '< ' + item.ref_high;
+    if (item.ref_low != null) return '> ' + item.ref_low;
+    return '—';
+  }
+
+  // 药品说明书 / 报告里的异常标记不能只靠颜色区分，还要有文字
+  function renderReport(report) {
+    currentReport = report;
+    const abnormal = report.items.filter(i => i.flag === 'high' || i.flag === 'low');
+
+    el.reportMeta.innerHTML = '';
+    [
+      ['报告编号', report.report_id || '未识别'],
+      ['采样日期', report.exam_date || '未识别'],
+      ['指标总数', report.items.length + ' 项'],
+      ['异常指标', abnormal.length + ' 项'],
+    ].forEach(([k, v]) => {
+      const span = document.createElement('span');
+      span.innerHTML = k + '：<b>' + v + '</b>';
+      el.reportMeta.appendChild(span);
+    });
+
+    el.itemsBody.innerHTML = '';
+    report.items.forEach(item => {
+      const tr = document.createElement('tr');
+      if (item.flag === 'high' || item.flag === 'low') {
+        tr.className = 'abnormal ' + item.flag;
+      }
+      const cells = [
+        { text: item.name_raw },
+        { text: item.value, cls: 'num' },
+        { text: item.unit || '—' },
+        { text: refText(item) },
+      ];
+      cells.forEach(c => {
+        const td = document.createElement('td');
+        td.textContent = c.text;
+        if (c.cls) td.className = c.cls;
+        tr.appendChild(td);
+      });
+      const tdFlag = document.createElement('td');
+      const badge = document.createElement('span');
+      badge.className = 'flag ' + (item.flag || 'normal');
+      badge.textContent = flagText(item.flag);
+      tdFlag.appendChild(badge);
+      tr.appendChild(tdFlag);
+      el.itemsBody.appendChild(tr);
+    });
+
+    el.stepReport.classList.remove('hidden');
+    el.stepMeds.classList.remove('hidden');
+  }
+
+  // ---------------- 上传 ----------------
+
+  async function upload(file) {
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name)) {
+      status(el.uploadStatus, 'error', '只支持 PDF 文件。');
+      return;
+    }
+
+    status(el.uploadStatus, 'loading', '正在解析 ' + file.name + ' ');
+    el.dropzone.style.display = 'none';
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const resp = await fetch(API + '/api/report/parse', { method: 'POST', body: form });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        status(el.uploadStatus, 'error', data.detail || ('解析失败（HTTP ' + resp.status + '）'));
+        el.dropzone.style.display = '';
+        return;
+      }
+
+      status(el.uploadStatus, '', '');
+      renderReport(data.report);
+    } catch (err) {
+      status(el.uploadStatus, 'error', '请求失败：' + err.message);
+      el.dropzone.style.display = '';
+    }
+  }
+
+  el.dropzone.addEventListener('click', () => el.fileInput.click());
+  el.fileInput.addEventListener('change', e => upload(e.target.files[0]));
+
+  ['dragenter', 'dragover'].forEach(evt =>
+    el.dropzone.addEventListener(evt, e => {
+      e.preventDefault();
+      el.dropzone.classList.add('dragover');
+    })
+  );
+
+  ['dragleave', 'drop'].forEach(evt =>
+    el.dropzone.addEventListener(evt, e => {
+      e.preventDefault();
+      el.dropzone.classList.remove('dragover');
+    })
+  );
+
+  el.dropzone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    upload(file);
+  });
+
+  // ---------------- 用药输入 ----------------
+
+  function renderChips() {
+    el.medChips.innerHTML = '';
+    medications.forEach((name, idx) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = name;
+      const x = document.createElement('i');
+      x.textContent = '×';
+      x.addEventListener('click', () => {
+        medications.splice(idx, 1);
+        renderChips();
+      });
+      chip.appendChild(x);
+      el.medChips.appendChild(chip);
+    });
+  }
+
+  function addMeds(raw) {
+    raw.split(/[,，、;；\s]+/).forEach(name => {
+      const trimmed = name.trim();
+      if (trimmed && !medications.includes(trimmed)) medications.push(trimmed);
+    });
+    renderChips();
+  }
+
+  el.medsInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addMeds(el.medsInput.value);
+      el.medsInput.value = '';
+    }
+  });
+
+  // ---------------- 核对 ----------------
+
+  el.askBtn.addEventListener('click', async () => {
+    // 输入框里还有没按回车的药名，一并收进来
+    if (el.medsInput.value.trim()) {
+      addMeds(el.medsInput.value);
+      el.medsInput.value = '';
+    }
+
+    if (!currentReport) {
+      status(el.askStatus, 'error', '请先上传报告。');
+      return;
+    }
+    if (!medications.length) {
+      status(el.askStatus, 'error', '请至少填一种在服药物。');
+      return;
+    }
+
+    el.askBtn.disabled = true;
+    status(el.askStatus, 'loading', '正在核对（模型需要 10–30 秒）');
+
+    try {
+      const resp = await fetch(API + '/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: '我报告里的异常指标，和我在吃的这些药有关系吗？逐项说明。',
+          report: currentReport,
+          medications: medications,
+          mode: 'agent',
+        }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        const detail = data.detail || ('请求失败（HTTP ' + resp.status + '）');
+        status(el.askStatus, 'error',
+          resp.status === 503
+            ? detail + '\n（模型服务不可用：确认 Ollama 与对话模型网关已启动）'
+            : detail);
+        el.askBtn.disabled = false;
+        return;
+      }
+
+      status(el.askStatus, '', '');
+      renderResult(data);
+    } catch (err) {
+      status(el.askStatus, 'error', '请求失败：' + err.message);
+    } finally {
+      el.askBtn.disabled = false;
+    }
+  });
+
+  function renderResult(data) {
+    // 工具调用轨迹 —— 让人看到「它查了什么」，这是 Agent 模式的价值所在
+    el.traceBox.innerHTML = '';
+    if (data.steps && data.steps.length) {
+      const box = document.createElement('div');
+      box.className = 'trace';
+      data.steps.forEach(step => {
+        const row = document.createElement('div');
+        row.className = 'step';
+        const mark = document.createElement('span');
+        mark.className = step.error ? 'err' : 'ok';
+        mark.textContent = step.error ? '×' : '✓';
+        const body = document.createElement('span');
+        body.innerHTML = '调用 <code>' + step.tool + '</code>(' +
+          JSON.stringify(step.args) + ') · 返回 ' + step.chars + ' 字';
+        row.appendChild(mark);
+        row.appendChild(body);
+        box.appendChild(row);
+      });
+      el.traceBox.appendChild(box);
+    }
+
+    el.answer.textContent = data.answer || '（无内容）';
+
+    el.citeList.innerHTML = '';
+    if (data.citations && data.citations.length) {
+      data.citations.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'cite';
+        // 优先用答案里的原始编号：同一章节可能被多个指标引用，
+        // 去重后数组只剩一条，按 i+1 编号会和正文对不上。
+        const no = (c.number != null) ? c.number : (i + 1);
+        div.textContent = '[' + no + '] ' + (c.label || c.source);
+        el.citeList.appendChild(div);
+      });
+      el.citeBox.classList.remove('hidden');
+    } else {
+      el.citeBox.classList.add('hidden');
+    }
+
+    el.stepResult.classList.remove('hidden');
+    el.stepResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+})();
+</script>
+</body>
+</html>

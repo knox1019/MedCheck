@@ -104,11 +104,18 @@ def _run_qa(question: str) -> ChatResponse:
 def _run_agent(req: ChatRequest) -> ChatResponse:
     ctx = ToolContext(report=req.report, medications=req.medications)
     result = run_agent(req.question, ctx)
+
+    # 出处要带上答案里的原始编号：同一章节可能被多个指标引用，
+    # citations 去重后只剩一条，但正文里仍写着 [2][4][6]。
+    numbers = result.cited_numbers or list(range(1, len(result.citations) + 1))
     return ChatResponse(
         answer=result.answer,
         refused=result.refused,
         reason="" if not result.refused else "资料不足以回答",
-        citations=[CitationOut.from_citation(c) for c in result.citations],
+        citations=[
+            CitationOut.from_citation(citation, number)
+            for number, citation in zip(numbers, result.citations)
+        ],
         mode="agent",
         turns=result.turns,
         steps=[

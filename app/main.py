@@ -13,9 +13,11 @@
 import logging
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router as api_router
-from app.core.config import get_settings
+from app.core.config import BASE_DIR, get_settings
 from app.core.logging import setup_logging
 
 # 必须在任何 logger 使用之前调用，否则前面打的日志没有统一格式
@@ -56,3 +58,16 @@ def health() -> dict:
         "env": settings.app_env,
         "version": settings.app_version,
     }
+
+
+# 演示界面挂在 /ui 下，而不是根路径。
+# 挂根路径会吃掉所有未匹配的请求，将来加新路由容易和静态资源冲突。
+WEB_DIR = BASE_DIR / "web"
+if WEB_DIR.exists():
+    app.mount("/ui", StaticFiles(directory=str(WEB_DIR), html=True), name="ui")
+
+
+@app.get("/", include_in_schema=False)
+def index() -> RedirectResponse:
+    """根路径直接跳到演示界面，省得记 /ui。"""
+    return RedirectResponse("/ui/")

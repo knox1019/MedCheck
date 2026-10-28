@@ -56,6 +56,8 @@ def ctx(collection):
         items=[
             LabItem(name_raw="丙氨酸氨基转移酶 ALT", value=68, unit="U/L",
                     ref_low=9, ref_high=50, flag="high"),
+            LabItem(name_raw="天门冬氨酸氨基转移酶 AST", value=41, unit="U/L",
+                    ref_low=15, ref_high=40, flag="high"),
             LabItem(name_raw="尿酸 UA", value=486, unit="μmol/L",
                     ref_low=208, ref_high=428, flag="high"),
         ],
@@ -394,3 +396,49 @@ def test_loop_answers_greeting_as_not_refusal(ctx):
     result = run("你好，你能做什么", ctx, client=client)
 
     assert result.refused is False
+
+
+def test_loop_preserves_original_citation_numbers(ctx):
+    """出处要保留答案里的原始编号，不能按数组下标重编。
+
+    citations 按「文件+章节」去重，而答案里的编号是工具返回的全局序号。
+    三个肝功能指标引用同一条「注意事项」时，正文写 [2][4][6]，
+    去重后 citations 只剩一条——按顺序重编就会变成 [1]，和正文对不上。
+    界面上一度出现过「正文说 [6]、出处只有 [1][2]」的问题。
+    """
+    client = _FakeClient([
+        ChatReply(content="", tool_calls=(_call("search_drug_label", {"drug": "华法林"}),)),
+        ChatReply(content="见 [2]。"),
+    ])
+    result = run("华法林注意事项", ctx, client=client)
+
+    assert result.cited_numbers == [2]
+    assert len(result.citations) == 1
+
+
+def test_register_dedupes_by_chunk_id(ctx):
+    """同一段原文被多个指标命中时，只发一个编号。
+
+    核对 11 项异常时，「阿托伐他汀·禁忌」会被 ALT、AST、胆固醇分别命中。
+    如果每次都发新编号，工具返回 [1][3][6] 指向同一段原文，
+    模型照抄进答案，正文引用 [1]~[7]、出处却只有两条，根本对不上。
+    编号必须在产生时就唯一，不能等展示层再去重。
+    """
+    hit = {"id": "c1", "text": "同一段原文", "metadata": {"drug": "华法林", "section": "禁忌"}}
+
+    assert ctx.register(hit) == 1
+    assert ctx.register(dict(hit)) == 1   # 同一个 chunk_id → 同一个编号
+    assert len(ctx.hits) == 1
+
+
+def test_check_indicators_does_not_repeat_sections(ctx):
+    """第二次核对时，已贴过的章节只标「同上」，不再重复贴原文。"""
+    r1 = execute(_call("check_indicators", {"indicators": ["谷丙转氨酶"]}), ctx)
+    assert "用药期间应复查肝功能" in r1.content
+
+    r2 = execute(_call("check_indicators", {"indicators": ["天门冬氨酸氨基转移酶"]}), ctx)
+    # ALT 和 AST 命中的是同一段注意事项/禁忌，第二次不能再贴一遍全文
+    assert "复查肝功能" not in r2.content.replace("（同上）", "")
+    assert "同上" in r2.content
+    # 但两个指标的编号指向都还在
+    assert "[" in r2.content

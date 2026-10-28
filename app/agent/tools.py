@@ -57,11 +57,31 @@ class ToolContext:
         # 工具返回给模型的文本里带 [1][2] 这样的编号，模型在答案里引用，
         # 最后就能把编号映射回具体章节——这是引用溯源在 Agent 模式下的实现方式。
         self.hits: list[dict] = []
+        # chunk_id → 编号。同一段原文被多个指标命中时只发一个编号。
+        self._by_chunk: dict[str, int] = {}
+        # 已经贴过原文的编号。重复命中时不再重复贴，只保留编号。
+        self.printed: set[int] = set()
 
     def register(self, hit: dict) -> int:
-        """登记一条命中，返回它的全局编号（从 1 开始）。"""
+        """登记一条命中，返回它的全局编号（从 1 开始）。
+
+        按 chunk_id 去重是关键。核对 11 项异常时，「阿托伐他汀·禁忌」
+        这一段会被 ALT、AST、总胆固醇、HDL-C 分别命中四次——
+        如果每次都发新编号，工具会返回 [1][3][6][7] 四个编号指向同一段原文，
+        模型照抄进答案，用户看到正文引用 [1]~[7]、出处却只有两条，根本对不上。
+
+        编号必须在产生时就唯一，不能等到展示层再去重——那时已经晚了，
+        模型已经写出 [6] 了。
+        """
+        chunk_id = hit.get("id")
+        if chunk_id and chunk_id in self._by_chunk:
+            return self._by_chunk[chunk_id]
+
         self.hits.append(hit)
-        return len(self.hits)
+        number = len(self.hits)
+        if chunk_id:
+            self._by_chunk[chunk_id] = number
+        return number
 
     @property
     def supported(self) -> set[str]:
@@ -154,11 +174,12 @@ TOOLS: list[dict] = [
 def _register_and_format(rows: list[dict], ctx: ToolContext) -> tuple[str, list[dict]]:
     """把章节原文登记到会话的命中池，并拼成带编号的文本。
 
-    编号是全局的（跨多次工具调用递增），这样模型在答案里写 [3] 时，
-    上层能准确找回第 3 条——不会被「这次调用是第几条」搞混。
+    编号全局唯一（按 chunk_id 去重），同一段原文只贴一次。
+    重复命中时只返回提示——否则第二次查询会把前面贴过的原文再贴一遍，
+    模型看到的上下文里同一段话出现两次，它引用时也会跟着混乱。
     """
     blocks: list[str] = []
-    registered: list[dict] = []
+    new_hits: list[dict] = []
     for row in rows:
         meta = row.get("metadata") or {}
         hit = {
@@ -168,13 +189,19 @@ def _register_and_format(rows: list[dict], ctx: ToolContext) -> tuple[str, list[
             "metadata": meta,
         }
         number = ctx.register(hit)
-        registered.append(hit)
+        if number in ctx.printed:
+            continue
+        ctx.printed.add(number)
+        new_hits.append(hit)
         blocks.append(
             f"[{number}] {meta.get('drug', '?')} · {meta.get('section', '?')}\n"
             f"{row.get('text', '')}\n"
             f"来源：{meta.get('source', '未知')}"
         )
-    return "\n\n".join(blocks), registered
+
+    if not blocks:
+        return "（这些章节在前面的调用里已经列出，编号不变，可直接引用。）", []
+    return "\n\n".join(blocks), new_hits
 
 
 def search_drug_label(args: dict, ctx: ToolContext) -> ToolResult:
@@ -258,6 +285,7 @@ def check_indicators(args: dict, ctx: ToolContext) -> ToolResult:
         item = finding.item
         unit = f" {item.unit}" if item.unit else ""
         blocks.append(f"【{finding.label} {item.value:g}{unit}（{item.flag}）】")
+        found_new = False
         for evidence in finding.evidences:
             hit = {
                 "id": evidence.chunk_id,
@@ -271,10 +299,18 @@ def check_indicators(args: dict, ctx: ToolContext) -> ToolResult:
             }
             number = ctx.register(hit)
             hits.append(hit)
+            if number in ctx.printed:
+                # 同一段原文前面已经贴过：只标注编号，不再重复贴原文。
+                blocks.append(f"  [{number}] {evidence.drug} · {evidence.section}（同上）")
+                continue
+            ctx.printed.add(number)
+            found_new = True
             blocks.append(
                 f"[{number}] {evidence.drug} · {evidence.section}"
                 f"（命中关键词：{'、'.join(evidence.matched)}）\n    {evidence.text}"
             )
+        if not found_new:
+            blocks.append("  （相关说明书内容在前面已列出）")
 
     if result.unsupported:
         blocks.append(f"（未收录、未核对的药：{'、'.join(result.unsupported)}）")

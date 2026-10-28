@@ -23,6 +23,8 @@ RUN uv sync --frozen --no-dev --no-cache
 
 # 再拷业务代码。代码改动只影响这之后的两层，构建很快。
 COPY app ./app
+# 演示界面（/ui）。不打进镜像的话容器里访问 /ui 会是 404。
+COPY web ./web
 
 EXPOSE 8000
 

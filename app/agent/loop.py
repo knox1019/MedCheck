@@ -97,6 +97,13 @@ class AgentResult:
     refused: bool = False
     steps: list[AgentStep] = field(default_factory=list)
     citations: list[Citation] = field(default_factory=list)
+    # 与 citations 一一对应的原始编号。
+    #
+    # 为什么必须留着：citations 按「文件+章节」去重了，而答案里的编号是
+    # 工具返回的全局序号。三个肝功能指标可能都引用同一条「注意事项」，
+    # 答案里写 [2][4][6]，去重后 citations 只有一条。
+    # 前端若按顺序重新编号，就会出现「正文说 [6]、出处只有 [1]」的情况。
+    cited_numbers: list[int] = field(default_factory=list)
     cited: bool = False
     turns: int = 0
     stopped: str = "done"  # done / max_turns
@@ -147,9 +154,13 @@ def _parse_args(raw) -> dict:
         return {}
 
 
-def _citations_from_hits(numbers: list[int], hits: list[dict]) -> list[Citation]:
-    """把答案里的编号映射回出处。编号是工具执行时分配的全局序号（从 1 开始）。"""
+def _citations_from_hits(numbers: list[int], hits: list[dict]) -> tuple[list[int], list[Citation]]:
+    """把答案里的编号映射回出处，同时保留去重前的原始编号。
+
+    返回 (kept_numbers, citations)，两个列表一一对应。
+    """
     result: list[Citation] = []
+    kept: list[int] = []
     seen: set[tuple] = set()
     for number in numbers:
         if not 1 <= number <= len(hits):
@@ -164,7 +175,8 @@ def _citations_from_hits(numbers: list[int], hits: list[dict]) -> list[Citation]
             continue
         seen.add(citation.key)
         result.append(citation)
-    return result
+        kept.append(number)
+    return kept, result
 
 
 def run(
@@ -195,7 +207,9 @@ def run(
             result.answer = reply.content
             result.refused = _is_refusal(reply.content, ctx.hits, steps)
             numbers = extract_cited_numbers(reply.content)
-            result.citations = _citations_from_hits(numbers, ctx.hits)
+            kept, citations = _citations_from_hits(numbers, ctx.hits)
+            result.citations = citations
+            result.cited_numbers = kept
             result.cited = bool(numbers)
             result.stopped = "done"
             result.steps = steps
