@@ -24,7 +24,7 @@ import logging
 from dataclasses import dataclass, field
 
 from app.agent.tools import TOOLS, ToolContext, execute
-from app.llm.client import ChatClient
+from app.llm.client import ChatClient, build_chat_client
 from app.llm.prompts import REFUSAL_PHRASE, extract_cited_numbers
 from app.rag.citation import Citation
 
@@ -186,7 +186,7 @@ def run(
     max_turns: int = 6,
 ) -> AgentResult:
     """跑一轮完整的 Agent 对话。"""
-    client = client or ChatClient()
+    client = client or build_chat_client()
     messages: list[dict] = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": build_user_message(question, ctx)},

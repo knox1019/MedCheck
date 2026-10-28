@@ -156,7 +156,7 @@ curl -X POST http://127.0.0.1:8000/api/chat -H "Content-Type: application/json" 
 | `embedding 连续失败 3 次` | Ollama 没启动 | 打开 Ollama 应用，确认托盘有小羊驼 |
 | `ModuleNotFoundError: No module named 'app'` | 用文件路径跑了脚本 | 用 `uv run python -m scripts.xxx` |
 | `uv run pytest` 有 4 个 skipped | Ollama 未启动，集成测试跳过 | 不是故障，启动后变 passed |
-| 检索能跑，问答 503 | `.env` 里 LLM 端点没配对 | 检查 `LLM_BASE_URL` / `LLM_API_KEY` |
+| 检索能跑，问答 503 | 主模型和备用模型都不可用 | 检查 `LLM_BASE_URL` / key；只配了主模型时开 Ollama 即可自动降级 |
 | DeepSeek 报 404 | 用了旧模型名或带 `/v1` | 用 `deepseek-flash`，端点不带 `/v1` |
 | 首次带 `--rerank` 卡住 | 在下载 570MB 重排模型 | 等约 10 分钟（走 hf-mirror） |
 | `docker compose` 报 unknown command | compose 插件未注册 | 用独立的 `docker-compose` 命令 |

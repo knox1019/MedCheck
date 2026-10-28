@@ -20,7 +20,7 @@
 
 from dataclasses import dataclass, field
 
-from app.llm.client import ChatClient
+from app.llm.client import ChatClient, build_chat_client
 from app.llm.prompts import REFUSAL_PHRASE, extract_cited_numbers
 from app.rag.citation import Citation
 from app.report.analyzer import Evidence, IndicatorFinding, MedicationReview
@@ -188,7 +188,7 @@ def narrate(
     context, index = build_context(review)
     messages = build_messages(context, list(review.medications))
 
-    client = client or ChatClient()
+    client = client or build_chat_client()
     text = client.chat(messages)
 
     cited_numbers = [n for n in extract_cited_numbers(text) if n in index]

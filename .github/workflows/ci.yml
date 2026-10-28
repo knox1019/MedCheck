@@ -1,0 +1,31 @@
+# CI：在 push / PR 时跑离线单元测试。
+#
+# 设计说明：
+#   - 只跑「离线单元测试」。需要 Ollama / 已建向量库的集成测试会自行 skip
+#     （测试里用 httpx 探 localhost:11434，连不上就跳过），CI 里不装 Ollama。
+#   - 用 uv 官方 action 装环境，uv.lock 已提交，--frozen 保证可复现。
+#   - 样本 PDF（data/samples/）和药名索引已入库，PDF 解析类测试在 CI 能跑。
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run unit tests
+        run: uv run pytest -q

@@ -58,6 +58,7 @@ class ChatReply:
     reasoning: str = ""  # 思维链，非推理模型为空
     usage: dict = field(default_factory=dict)  # token 用量，部分后端不返回
     tool_calls: tuple[dict, ...] = ()  # 模型要求调用的工具，没有则为空
+    model: str = ""  # 实际回答的模型。带降级时能看出「这次是谁答的」
 
     @property
     def has_reasoning(self) -> bool:
@@ -216,6 +217,7 @@ class ChatClient:
             reasoning=reasoning,
             usage=data.get("usage") or {},
             tool_calls=tool_calls,
+            model=self.model,
         )
 
     def chat(self, messages: list[dict]) -> str:
@@ -225,3 +227,85 @@ class ChatClient:
         而且评测脚本（引用标注率、拒答判断）判定的也是 content。
         """
         return self.complete(messages).content
+
+
+class FallbackChatClient:
+    """主模型不可用时自动降级到备用模型的客户端外壳。
+
+    对调用方完全透明：complete() / chat() 的签名和返回值与 ChatClient 一致，
+    上层（问答 / 报告核对 / Agent 循环）不需要知道自己拿到的是哪个。
+
+    触发降级的错误（按「换一个模型能不能解决」来划界）：
+
+        会切换   网络不通 / 超时 / 服务端 5xx —— complete() 内部重试耗尽后
+                 统一包成「大模型连续失败 N 次」抛出；以及响应格式根本不像
+                 OpenAI 协议（主模型服务本身坏了）
+        不切换   空答案（max_tokens 配置问题）、鉴权 401 —— 换模型解决不了，
+                 报出来让人修配置才是对的
+
+    代价要如实说：主模型挂掉时，complete() 内部会先重试 3 次（约 7 秒）
+    才轮到备用模型。这个延迟换来的是 429 限流时先原地重试、
+    不轻易降到更弱的本地模型——对医疗问答这是更保守、更对的选择。
+    """
+
+    def __init__(self, primary: ChatClient, fallback: ChatClient) -> None:
+        self.primary = primary
+        self.fallback = fallback
+        # 最近一次实际完成回答的模型。诊断「答案质量为什么变了」时先看它。
+        self.last_model_used: str = primary.model
+
+    @property
+    def model(self) -> str:
+        """主模型名。调用方一般只用来打日志，够用。"""
+        return self.primary.model
+
+    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> ChatReply:
+        try:
+            reply = self.primary.complete(messages, tools=tools)
+            self.last_model_used = self.primary.model
+            return reply
+        except RuntimeError as exc:
+            message = str(exc)
+            if "连续失败" not in message and "响应格式异常" not in message:
+                raise
+            logger.warning(
+                "主模型 %s 不可用（%s），自动切换备用模型 %s",
+                self.primary.model,
+                message,
+                self.fallback.model,
+            )
+        reply = self.fallback.complete(messages, tools=tools)
+        self.last_model_used = self.fallback.model
+        return reply
+
+    def chat(self, messages: list[dict]) -> str:
+        return self.complete(messages).content
+
+
+def build_chat_client(model: str | None = None) -> ChatClient | FallbackChatClient:
+    """按配置构造对话客户端；配了备用模型时返回带降级能力的外壳。
+
+    这是业务代码拿客户端的统一入口（问答 / 报告核对 / Agent 的默认路径）。
+    需要精确指向某个模型的场景（评测脚本、探活）仍直接构造 ChatClient——
+    评测必须知道「这次测的是谁」，静默降级会让指标失真。
+
+    主备配置相同时不包外壳：主模型挂了再去请求同一个地址没有意义。
+    """
+    settings = get_settings()
+    primary = ChatClient(model=model)
+
+    fallback_url = settings.llm_fallback_base_url
+    if not fallback_url:
+        return primary
+    if (
+        fallback_url.rstrip("/") == primary.base_url
+        and settings.llm_fallback_model == primary.model
+    ):
+        return primary
+
+    fallback = ChatClient(
+        base_url=fallback_url,
+        model=settings.llm_fallback_model,
+        api_key=settings.llm_fallback_api_key,
+    )
+    return FallbackChatClient(primary, fallback)

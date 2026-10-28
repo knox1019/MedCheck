@@ -15,7 +15,7 @@
 
 from dataclasses import dataclass, field
 
-from app.llm.client import ChatClient
+from app.llm.client import ChatClient, build_chat_client
 from app.llm.prompts import (
     REFUSAL_PHRASE,
     build_context,
@@ -73,7 +73,7 @@ def answer(
     context, index = build_context(result.hits)
     messages = build_messages(question, context)
 
-    client = client or ChatClient()
+    client = client or build_chat_client()
     text = client.chat(messages)
 
     # 模型判断资料不足：如实拒答，且不给出处

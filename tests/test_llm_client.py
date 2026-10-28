@@ -231,3 +231,129 @@ def test_chat_returns_content_only(fake_http):
     )
 
     assert ChatClient().chat([{"role": "user", "content": "hi"}]) == "答案"
+
+
+# ------------------------------------------------------------------ 主备降级
+
+class _StubPrimary:
+    """可编程的主客户端替身：按脚本依次抛错或返回。"""
+
+    def __init__(self, model: str, script: list) -> None:
+        self.model = model
+        self.script = list(script)
+        self.calls = 0
+
+    def complete(self, messages, tools=None) -> ChatReply:
+        self.calls += 1
+        step = self.script.pop(0)
+        if isinstance(step, Exception):
+            raise step
+        return step
+
+
+def test_fallback_switches_when_primary_exhausts_retries():
+    """主模型「重试耗尽」（网络不通 / 5xx 的统一出口）→ 切备用模型。"""
+    fallback = ChatClient(base_url="http://localhost:11434/v1", model="qwen2.5:7b")
+    wrapper = client_module.FallbackChatClient(
+        _StubPrimary("cn:hy3", [RuntimeError("大模型连续失败 3 次")]),
+        fallback,
+    )
+
+    reply = wrapper.complete([{"role": "user", "content": "hi"}])
+
+    assert reply.content                      # 备用模型确实返回了内容
+    assert reply.model == "qwen2.5:7b"
+    assert wrapper.last_model_used == "qwen2.5:7b"
+
+
+def test_fallback_switches_on_malformed_primary_response():
+    """主模型返回的不是 OpenAI 协议格式（网关坏了）→ 也切。"""
+    wrapper = client_module.FallbackChatClient(
+        _StubPrimary("cn:hy3", [RuntimeError("大模型响应格式异常：<html>…")]),
+        ChatClient(base_url="http://localhost:11434/v1", model="qwen2.5:7b"),
+    )
+
+    reply = wrapper.complete([{"role": "user", "content": "hi"}])
+
+    assert reply.model == "qwen2.5:7b"
+
+
+def test_fallback_does_not_trigger_on_empty_answer():
+    """空答案是 max_tokens 配置问题，换模型解决不了 → 原样抛出。
+
+    如果这里也降级，「配置错了」就会被伪装成「备用模型的回答」，
+    排查方向全歪——这正是当初把空答案设计成报错的原因。
+    """
+    primary = _StubPrimary("cn:hy3", [RuntimeError("模型返回空答案（finish_reason=length）")])
+    fallback_calls = []
+
+    class _RecordingFallback(_StubPrimary):
+        def complete(self, messages, tools=None):
+            fallback_calls.append(1)
+            return super().complete(messages, tools=tools)
+
+    wrapper = client_module.FallbackChatClient(
+        primary,
+        _RecordingFallback("qwen2.5:7b", [ChatReply(content="不该被用到")]),
+    )
+
+    with pytest.raises(RuntimeError, match="空答案"):
+        wrapper.complete([{"role": "user", "content": "hi"}])
+    assert fallback_calls == []
+
+
+def test_fallback_not_used_when_primary_healthy():
+    """主模型正常时绝不碰备用——降级是异常路径，不是负载均衡。"""
+    good = ChatReply(content="主模型的回答", model="cn:hy3")
+    wrapper = client_module.FallbackChatClient(
+        _StubPrimary("cn:hy3", [good]),
+        _StubPrimary("qwen2.5:7b", [RuntimeError("备用模型不该被调用")]),
+    )
+
+    reply = wrapper.complete([{"role": "user", "content": "hi"}])
+
+    assert reply.model == "cn:hy3"
+    assert wrapper.last_model_used == "cn:hy3"
+
+
+def test_build_chat_client_returns_wrapper_when_fallback_configured(monkeypatch):
+    """主备配置不同 → 返回降级外壳。"""
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:7863/v1")
+    monkeypatch.setenv("LLM_MODEL", "cn:hy3")
+    monkeypatch.setenv("LLM_FALLBACK_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("LLM_FALLBACK_MODEL", "qwen2.5:7b")
+    client_module.get_settings.cache_clear()
+
+    try:
+        wrapper = client_module.build_chat_client()
+        assert isinstance(wrapper, client_module.FallbackChatClient)
+        assert wrapper.primary.model == "cn:hy3"
+        assert wrapper.fallback.model == "qwen2.5:7b"
+    finally:
+        client_module.get_settings.cache_clear()
+
+
+def test_build_chat_client_skips_wrapper_when_primary_is_fallback(monkeypatch):
+    """主模型本身就是本地 Ollama 时不再包一层——挂了再请求同一个地址没有意义。"""
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("LLM_MODEL", "qwen2.5:7b")
+    monkeypatch.delenv("LLM_FALLBACK_BASE_URL", raising=False)
+    client_module.get_settings.cache_clear()
+
+    try:
+        client = client_module.build_chat_client()
+        assert isinstance(client, ChatClient)
+    finally:
+        client_module.get_settings.cache_clear()
+
+
+def test_build_chat_client_disabled_by_empty_fallback_url(monkeypatch):
+    """显式把备用 base_url 置空 = 关闭降级。"""
+    monkeypatch.setenv("LLM_FALLBACK_BASE_URL", "")
+    client_module.get_settings.cache_clear()
+
+    try:
+        client = client_module.build_chat_client()
+        assert isinstance(client, ChatClient)
+    finally:
+        client_module.get_settings.cache_clear()

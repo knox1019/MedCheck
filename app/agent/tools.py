@@ -227,11 +227,8 @@ def search_drug_label(args: dict, ctx: ToolContext) -> ToolResult:
         )
 
     target = match.matched[0]
-    where: dict = {"drug": target}
-    if section:
-        # 章节做包含匹配：人工语料里有「注意事项-肝功能」这类细分章节
-        where = {"$and": [{"drug": target}, {"section": {"$in": [section]}}]}
-
+    # 先取该药全部章节，再在 Python 里按章节名做包含匹配：
+    # 人工语料里有「注意事项-肝功能」这类细分章节，元数据过滤做不到子串匹配。
     data = ctx.collection.get(where={"drug": target}, include=["documents", "metadatas"])
     rows = [
         {"id": cid, "text": text or "", "metadata": meta or {}}

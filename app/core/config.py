@@ -88,6 +88,14 @@ class Settings(BaseSettings):
     # 想省钱省时间就显式设成 disabled，走非思考模式。
     llm_thinking: str = ""
 
+    # ---- 大模型备用（主模型不可用时自动降级）----
+    # 三个值都配了才启用。触发条件是「网络不通 / 服务端 5xx / 主模型重试耗尽」，
+    # 401、404 这类配置错误不会触发——换模型解决不了配置问题。
+    # 把 base_url 设为空字符串可显式关闭降级。
+    llm_fallback_base_url: str = "http://localhost:11434/v1"
+    llm_fallback_model: str = "qwen2.5:7b"
+    llm_fallback_api_key: str = "ollama"
+
 
 @lru_cache
 def get_settings() -> Settings:
