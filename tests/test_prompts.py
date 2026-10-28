@@ -128,7 +128,8 @@ def test_qa_refuses_unsupported_drug():
     """库外药品在检索层就该拒答，不应调用模型。"""
     from app.llm.qa import answer
 
-    result = answer("别嘌醇的禁忌是什么")
+    # 用真正的缺口药：语料扩充后别嘌醇已有资料，不能再当反例
+    result = answer("格列本脲的禁忌是什么")
 
     assert result.refused is True
     assert "未收录" in result.reason

@@ -128,7 +128,8 @@ def test_retrieve_rejects_unsupported_drug():
     """库外药品必须拒答，而且不能返回任何片段（否则下游可能拿去用）。"""
     from app.rag.retriever import retrieve
 
-    result = retrieve("别嘌醇的禁忌是什么")
+    # 用真正的缺口药：语料扩充后别嘌醇已有资料，不能再当反例
+    result = retrieve("格列本脲的禁忌是什么")
 
     assert result.answerable is False
     assert "未收录" in result.reason
@@ -170,3 +171,58 @@ def test_supported_drugs_come_from_index():
 
     assert len(drugs) >= 8
     assert all(isinstance(name, str) and name for name in drugs)
+
+
+# ------------------------------------------------- 官方药品名称索引（663 种）
+
+def test_drug_index_loaded():
+    """官方索引要能被加载，且数量达到国家基本药物目录的量级。"""
+    from app.rag.guards import load_drug_index, scan_index
+
+    index = load_drug_index()
+    assert len(index) >= 500, f"索引只有 {len(index)} 条，可能没生成"
+
+    merged = scan_index()
+    assert len(merged) >= len(index)
+
+
+def test_indexed_drug_without_corpus_is_unsupported():
+    """索引里有、语料里没有的药，必须判为未收录。
+
+    这类药如果没有被识别出来，系统会拿语义最接近的别的药去作答——
+    比拒答危险得多。
+    """
+    from app.rag.guards import resolve_drugs
+
+    for query, drug in [
+        ("青霉素的禁忌是什么", "青霉素"),
+        ("六味地黄丸能长期吃吗", "六味地黄丸"),
+        ("奥司他韦有什么副作用", "奥司他韦"),
+    ]:
+        match = resolve_drugs(query, {"华法林"})
+        assert drug in match.unsupported, f"{drug} 未被识别"
+        assert match.only_unknown is True
+
+
+def test_substring_pruning_for_compound_drug():
+    """复方制剂不能被拆成单方成分。
+
+    「阿莫西林」是「阿莫西林克拉维酸钾」的子串。
+    若不裁剪，问复方制剂会命中单方成分，然后用单方的资料作答——
+    答案看起来合理，但说的不是同一个药。
+    """
+    from app.rag.guards import resolve_drugs
+
+    match = resolve_drugs("阿莫西林克拉维酸钾的禁忌", {"阿莫西林"})
+
+    assert "阿莫西林" not in match.matched
+    assert "阿莫西林克拉维酸钾" in match.unsupported
+    assert match.only_unknown is True
+
+
+def test_substring_pruning_keeps_correct_single_drug():
+    """裁剪不能误伤正常情况：单方药本身仍应被正确识别。"""
+    from app.rag.guards import resolve_drugs
+
+    match = resolve_drugs("阿莫西林的禁忌", {"阿莫西林"})
+    assert match.matched == ["阿莫西林"]

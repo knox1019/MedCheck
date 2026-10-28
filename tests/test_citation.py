@@ -134,7 +134,9 @@ def test_refusal_has_no_citations():
     """拒答时不能给出处——否则用户会误以为「查到了但不说」。"""
     from app.rag.retriever import retrieve
 
-    result = retrieve("别嘌醇的禁忌是什么")
+    # 用真正的缺口药（语料里没有它的说明书）。别嘌醇在语料扩充后已有资料，
+    # 不能再当「未收录」的例子——语料一变，测试的样例也要跟着变。
+    result = retrieve("格列本脲的禁忌是什么")
 
     assert result.answerable is False
     assert result.citations == []

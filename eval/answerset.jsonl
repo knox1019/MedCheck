@@ -1,0 +1,21 @@
+{"id": "a01", "question": "华法林的禁忌是什么", "expect": "answer", "must_have": ["肝肾功能损害"]}
+{"id": "a02", "question": "阿司匹林会不会把胃吃坏", "expect": "answer", "must_have": ["溃疡"]}
+{"id": "a03", "question": "多潘立酮会导致心脏问题吗", "expect": "answer", "must_have": ["QT"]}
+{"id": "a04", "question": "呋塞米会不会引起低钾", "expect": "answer", "must_have": ["低钾"]}
+{"id": "a05", "question": "头孢克肟和酒能一起吗", "expect": "refuse_corpus", "note": "头孢类确有双硫仑样反应，但人工语料三个章节均未提及"}
+{"id": "a06", "question": "二甲双胍有哪些禁忌", "expect": "answer", "must_have": ["肾功能"]}
+{"id": "a07", "question": "阿托伐他汀对肝功能有什么影响", "expect": "answer", "must_have": ["转氨酶"]}
+{"id": "a08", "question": "氯雷他定吃了会犯困吗", "expect": "answer", "must_have": ["嗜睡"]}
+{"id": "a09", "question": "华法林和什么药不能一起吃", "expect": "answer", "must_have": ["出血"]}
+{"id": "a10", "question": "地高辛中毒有什么表现", "expect": "answer", "must_have": ["恶心"]}
+{"id": "a11", "question": "华法林是饭前吃还是饭后吃", "expect": "refuse_corpus"}
+{"id": "a12", "question": "布洛芬和牛奶能一起吃吗", "expect": "refuse_corpus"}
+{"id": "a13", "question": "二甲双胍可以减肥吗", "expect": "refuse_corpus"}
+{"id": "a14", "question": "头孢克肟过敏的人能用吗", "expect": "answer", "must_have": ["过敏"]}
+{"id": "a15", "question": "别嘌醇的禁忌是什么", "expect": "answer", "note": "语料扩充后已有完整说明书内容，由应拒答改为应作答"}
+{"id": "a16", "question": "辛伐他汀有哪些禁忌", "expect": "answer", "note": "同上"}
+{"id": "a17", "question": "青霉素过敏的人能用吗", "expect": "answer", "note": "同上"}
+{"id": "a18", "question": "奥司他韦怎么吃", "expect": "refuse_corpus", "note": "语料只有注意事项与相互作用，没有用法用量，问「怎么吃」应拒答"}
+{"id": "a19", "question": "格列本脲的禁忌是什么", "expect": "refuse_unsupported", "drug": "格列本脲"}
+{"id": "a20", "question": "甲钴胺有什么副作用", "expect": "refuse_unsupported", "drug": "甲钴胺"}
+{"id": "a21", "question": "艾司唑仑能长期吃吗", "expect": "refuse_unsupported", "drug": "艾司唑仑"}

@@ -20,6 +20,12 @@
 """
 
 from dataclasses import dataclass, field
+from functools import lru_cache
+from pathlib import Path
+
+# 官方药品名称索引（国家基本药物目录 663 种）。
+# 它只说明系统「认识」这个药名，不代表语料里有资料。
+DRUG_INDEX_PATH = Path(__file__).resolve().parents[2] / "data" / "corpus" / "drug_name_index.json"
 
 # 能识别的药名 → 别名（通用名、商品名、英文名）。
 # 这里收录两类：已经在语料里的，以及常见但暂时没收录的。
@@ -94,6 +100,47 @@ class DrugMatch:
         return not self.matched and bool(self.unsupported)
 
 
+@lru_cache
+def load_drug_index() -> dict[str, list[str]]:
+    """加载官方药品名称索引，返回 药名 → 别名列表。
+
+    只读一次，用 lru_cache 缓存。文件不存在时返回空字典，
+    这样即使忘了先生成索引，系统仍能用内置的 DRUG_ALIASES 工作。
+    """
+    if not DRUG_INDEX_PATH.exists():
+        return {}
+    import json
+
+    payload = json.loads(DRUG_INDEX_PATH.read_text(encoding="utf-8"))
+    return {entry["name"]: entry["aliases"] for entry in payload.get("drugs", [])}
+
+
+def scan_index() -> dict[str, list[str]]:
+    """合并内置别名表与官方索引。
+
+    内置表里有商品名和英文名（芬必得、warfarin），官方索引有 663 个通用名。
+    两份合并后系统的「可识别药名」才是完整的。
+    """
+    merged = dict(load_drug_index())
+    merged.update(DRUG_ALIASES)  # 内置表优先，覆盖同名条目
+    return merged
+
+
+def _drop_substring_names(drugs: list[str]) -> list[str]:
+    """去掉「被更长药名包含」的短名。
+
+    「青霉素」是「苄星青霉素」和「阿莫西林克拉维酸钾」里没有，
+    但「阿莫西林」确实是「阿莫西林克拉维酸钾」的子串。
+    不清理的话，问复方制剂会命中单方成分，然后用单方的资料作答——
+    这是比拒答更严重的错误：答案看起来很合理，但说的不是同一个药。
+    """
+    return [
+        drug
+        for drug in drugs
+        if not any(drug != other and drug in other for other in drugs)
+    ]
+
+
 def _scan(text: str, index: dict[str, list[str]]) -> list[str]:
     """在 query 里扫出命中的药名（按别名子串匹配）。
 
@@ -121,11 +168,15 @@ def resolve_drugs(query: str, supported: set[str]) -> DrugMatch:
     supported 必须来自真实索引，不能硬编码——否则语料更新后
     会出现「已入库的药仍被判为未收录」的矛盾。
 
+    可识别的药名 = 内置别名表 + 官方药品名称索引（663 种），
+    因此「知道这个药但没有资料」能被准确识别并拒答，
+    而不是拿语义上最接近的别的药去凑答案。
+
     >>> resolve_drugs("华法林的禁忌", {"华法林"})        → matched=['华法林']
     >>> resolve_drugs("别嘌醇的禁忌", {"华法林"})        → unsupported=['别嘌醇']
     >>> resolve_drugs("布洛芬和阿司匹林", {"布洛芬"})     → matched=['布洛芬'], unsupported=['阿司匹林']
     """
-    hits = _scan(query, DRUG_ALIASES)
+    hits = _drop_substring_names(_scan(query, scan_index()))
     matched = [drug for drug in hits if drug in supported]
     unsupported = [drug for drug in hits if drug not in supported]
     return DrugMatch(matched=matched, unsupported=unsupported)

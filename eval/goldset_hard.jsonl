@@ -19,9 +19,9 @@
 {"id": "h19", "query": "多潘立酮会导致心脏问题吗", "type": "answerable", "expected_drug": "多潘立酮", "expected_section": "注意事项", "why": "心脏风险"}
 {"id": "h20", "query": "对乙酰氨基酚吃多了伤肝吗", "type": "answerable", "expected_drug": "对乙酰氨基酚", "expected_section": "注意事项", "why": "过量肝损"}
 {"id": "h21", "query": "非布司他吃了会过敏吗", "type": "refuse_unsupported", "unsupported_drug": "非布司他"}
-{"id": "h22", "query": "辛伐他汀和柚子能一起吃吗", "type": "refuse_unsupported", "unsupported_drug": "辛伐他汀"}
-{"id": "h23", "query": "缬沙坦漏服要补吗", "type": "refuse_unsupported", "unsupported_drug": "缬沙坦"}
-{"id": "h24", "query": "格列美脲会不会引起低血糖", "type": "refuse_unsupported", "unsupported_drug": "格列美脲"}
+{"id": "h22", "type": "refuse_unsupported", "unsupported_drug": "格列本脲", "query": "格列本脲会不会引起低血糖"}
+{"id": "h23", "type": "refuse_unsupported", "unsupported_drug": "甲钴胺", "query": "甲钴胺能长期吃吗"}
+{"id": "h24", "type": "refuse_unsupported", "unsupported_drug": "艾司唑仑", "query": "艾司唑仑的禁忌是什么"}
 {"id": "h25", "query": "今天股票行情怎么样", "type": "refuse_offtopic"}
 {"id": "h26", "query": "帮我翻译一段英文", "type": "refuse_offtopic"}
 {"id": "h27", "query": "明天会下雨吗", "type": "refuse_offtopic"}

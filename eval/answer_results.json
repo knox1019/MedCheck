@@ -1,0 +1,350 @@
+{
+  "model": "qwen2.5:7b",
+  "total": 21,
+  "behavior_ok": 21,
+  "n_should_answer": 13,
+  "n_should_refuse": 8,
+  "cited": 13,
+  "n_answered": 13,
+  "cites_valid": 13,
+  "keypoint_ok": 10,
+  "keypoint_total": 10,
+  "hallucinated_cases": 0,
+  "latency_median": 7.873519100015983,
+  "records": [
+    {
+      "id": "a01",
+      "question": "华法林的禁忌是什么",
+      "expect": "answer",
+      "refused": false,
+      "answer": "华法林的禁忌包括：肝肾功能损害、严重高血压、凝血功能障碍伴有出血倾向、活动性溃疡、外伤、先兆流产、近期手术者；妊娠期禁用。各种原因的维生素K缺乏症患者，以及脑脊髓、眼科手术患者原则上也禁用。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "肝肾功能损害"
+      ],
+      "keypoint_hits": [
+        "肝肾功能损害"
+      ],
+      "hallucinated": [],
+      "elapsed": 15.541527599969413
+    },
+    {
+      "id": "a02",
+      "question": "阿司匹林会不会把胃吃坏",
+      "expect": "answer",
+      "refused": false,
+      "answer": "阿司匹林可能增加胃肠道出血的风险[1]，长期大量用药可诱发消化道溃疡出血[2]。因此，阿司匹林有可能把胃“吃坏”。[1][2]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "溃疡"
+      ],
+      "keypoint_hits": [
+        "溃疡"
+      ],
+      "hallucinated": [],
+      "elapsed": 7.873519100015983
+    },
+    {
+      "id": "a03",
+      "question": "多潘立酮会导致心脏问题吗",
+      "expect": "answer",
+      "refused": false,
+      "answer": "多潘立酮可延长QT间期，60岁以上、合用相关药物及电解质紊乱者风险更高。因此，它可能会导致心脏问题。[2]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "QT"
+      ],
+      "keypoint_hits": [
+        "QT"
+      ],
+      "hallucinated": [],
+      "elapsed": 6.821782499959227
+    },
+    {
+      "id": "a04",
+      "question": "呋塞米会不会引起低钾",
+      "expect": "answer",
+      "refused": false,
+      "answer": "会，呋塞米使用期间可引起低钾血症，低钾血症可增加洋地黄中毒和心律失常的风险。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "低钾"
+      ],
+      "keypoint_hits": [
+        "低钾"
+      ],
+      "hallucinated": [],
+      "elapsed": 6.054466100002173
+    },
+    {
+      "id": "a05",
+      "question": "头孢克肟和酒能一起吗",
+      "expect": "refuse_corpus",
+      "refused": true,
+      "answer": "资料中未提及",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 16.178781300026458
+    },
+    {
+      "id": "a06",
+      "question": "二甲双胍有哪些禁忌",
+      "expect": "answer",
+      "refused": false,
+      "answer": "二甲双胍的禁忌包括：2型糖尿病合并酮症酸中毒、肝肾功能不全（男性血清肌酐＞133μmol/L、女性＞124μmol/L）、肺功能不全、心力衰竭、急性心肌梗死、严重感染、外伤、重大手术、酗酒、缺氧状态及妊娠期禁用；维生素B12或叶酸缺乏未纠正者禁用。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "肾功能"
+      ],
+      "keypoint_hits": [
+        "肾功能"
+      ],
+      "hallucinated": [],
+      "elapsed": 15.282117399969138
+    },
+    {
+      "id": "a07",
+      "question": "阿托伐他汀对肝功能有什么影响",
+      "expect": "answer",
+      "refused": false,
+      "answer": "阿托伐他汀用药前、用药后12周及剂量增加后应复查肝功能，转氨酶持续升高超过正常上限3倍者应减量或停药。大量饮酒及有肝脏疾病史者慎用，若出现黄疸、明显乏力、食欲减退等肝损伤表现应及时就诊。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "转氨酶"
+      ],
+      "keypoint_hits": [
+        "转氨酶"
+      ],
+      "hallucinated": [],
+      "elapsed": 11.675838799972553
+    },
+    {
+      "id": "a08",
+      "question": "氯雷他定吃了会犯困吗",
+      "expect": "answer",
+      "refused": false,
+      "answer": "个别患者服用氯雷他定后可能会出现嗜睡、乏力的情况，因此驾车及高空作业者应注意[1]。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "嗜睡"
+      ],
+      "keypoint_hits": [
+        "嗜睡"
+      ],
+      "hallucinated": [],
+      "elapsed": 5.498890599992592
+    },
+    {
+      "id": "a09",
+      "question": "华法林和什么药不能一起吃",
+      "expect": "answer",
+      "refused": false,
+      "answer": "华法林与肝肾功能损害、严重高血压、凝血功能障碍伴有出血倾向、活动性溃疡、外伤、先兆流产、近期手术者；妊娠期；维生素K缺乏症；脑脊髓、眼科手术患者禁用的药物不能一起服用。同时，与可能增强抗凝作用的药物（如阿司匹林、水杨酸钠、吲哚美辛等）或减弱抗凝作用的药物（如苯妥英钠、巴比妥类、维生素K、利福平、雌激素、口服避孕药、螺内酯等）合用时需谨慎，应加强INR监测。[1][2]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "出血"
+      ],
+      "keypoint_hits": [
+        "出血"
+      ],
+      "hallucinated": [],
+      "elapsed": 21.118070999975316
+    },
+    {
+      "id": "a10",
+      "question": "地高辛中毒有什么表现",
+      "expect": "answer",
+      "refused": false,
+      "answer": "地高辛中毒的表现包括室性早搏、房室传导阻滞等心律失常及恶心呕吐、黄绿视、意识障碍等。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "恶心"
+      ],
+      "keypoint_hits": [
+        "恶心"
+      ],
+      "hallucinated": [],
+      "elapsed": 6.334075800026767
+    },
+    {
+      "id": "a11",
+      "question": "华法林是饭前吃还是饭后吃",
+      "expect": "refuse_corpus",
+      "refused": true,
+      "answer": "资料中未提及",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 4.749246100021992
+    },
+    {
+      "id": "a12",
+      "question": "布洛芬和牛奶能一起吃吗",
+      "expect": "refuse_corpus",
+      "refused": true,
+      "answer": "资料中未提及",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 4.007669200014789
+    },
+    {
+      "id": "a13",
+      "question": "二甲双胍可以减肥吗",
+      "expect": "refuse_corpus",
+      "refused": true,
+      "answer": "资料中未提及",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 2.561948199989274
+    },
+    {
+      "id": "a14",
+      "question": "头孢克肟过敏的人能用吗",
+      "expect": "answer",
+      "refused": false,
+      "answer": "头孢克肟过敏者禁用。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [
+        "过敏"
+      ],
+      "keypoint_hits": [
+        "过敏"
+      ],
+      "hallucinated": [],
+      "elapsed": 11.970378600002732
+    },
+    {
+      "id": "a15",
+      "question": "别嘌醇的禁忌是什么",
+      "expect": "answer",
+      "refused": false,
+      "answer": "别嘌醇的禁忌包括：\n1、对别嘌醇、苯溴马隆及/或溴化物过敏者。\n2、肾功能不全（肌酐清除率1.5mg/100ml）者。\n3、有肾结石形成倾向者。\n4、严重肝损害。\n5、痛风急性发作期。\n6、妊娠和哺乳期。\n7、14岁以下儿童。\n8、以往有造血功能障碍病史者需作特殊仔细的医学监测。\n\n[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 18.893986400042195
+    },
+    {
+      "id": "a16",
+      "question": "辛伐他汀有哪些禁忌",
+      "expect": "answer",
+      "refused": false,
+      "answer": "辛伐他汀的禁忌包括：\n1、对本品任何成份过敏者。\n2、活动性肝病或无法解释的血清转氨酶持续升高者。\n3、怀孕及哺乳期妇女。\n4、禁止与四氢酚类钙通道阻滞剂米贝地尔合用。\n\n[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 13.37290459999349
+    },
+    {
+      "id": "a17",
+      "question": "青霉素过敏的人能用吗",
+      "expect": "answer",
+      "refused": false,
+      "answer": "青霉素过敏的人不能使用青霉素。有青霉素类药物或普鲁卡因过敏史者，以及青霉素或普鲁卡因皮肤试验阳性患者禁用。[1]",
+      "behavior_ok": true,
+      "cited": true,
+      "cites_valid": true,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 9.3163676999975
+    },
+    {
+      "id": "a18",
+      "question": "奥司他韦怎么吃",
+      "expect": "refuse_corpus",
+      "refused": true,
+      "answer": "资料中未提及",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 23.623201699985657
+    },
+    {
+      "id": "a19",
+      "question": "格列本脲的禁忌是什么",
+      "expect": "refuse_unsupported",
+      "refused": true,
+      "answer": "",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 0.06202270003268495
+    },
+    {
+      "id": "a20",
+      "question": "甲钴胺有什么副作用",
+      "expect": "refuse_unsupported",
+      "refused": true,
+      "answer": "",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 0.06057580001652241
+    },
+    {
+      "id": "a21",
+      "question": "艾司唑仑能长期吃吗",
+      "expect": "refuse_unsupported",
+      "refused": true,
+      "answer": "",
+      "behavior_ok": true,
+      "cited": false,
+      "cites_valid": false,
+      "must_have": [],
+      "keypoint_hits": [],
+      "hallucinated": [],
+      "elapsed": 0.05967580003198236
+    }
+  ]
+}
