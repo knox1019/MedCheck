@@ -65,6 +65,20 @@ class Settings(BaseSettings):
     # 模型从 HuggingFace 下载，国内直连不通，默认走镜像
     hf_endpoint: str = "https://hf-mirror.com"
 
+    # ---- 大模型 ----
+    # 和 embedding 一样走 OpenAI 兼容协议：换成本地 Ollama 还是云端 API，
+    # 只改下面三个值，业务代码不用动。
+    llm_base_url: str = "http://localhost:11434/v1"
+    # 默认 7b：实测 1.5b 的引用标注率只有 1/4，7b 是 4/4，而两者行为正确率相同（6/6）。
+    # 生成层最怕的不是啰嗦，是「说得像样但没标出处」，所以宁可慢也要 7b。
+    # 接入云端 API（DeepSeek / 硅基流动）后延迟会从 19 秒降到 2–3 秒。
+    llm_model: str = "qwen2.5:7b"
+    llm_api_key: str = "ollama"
+    # 医疗问答必须可复现，温度固定为 0，不做随机采样
+    llm_temperature: float = 0.0
+    # 本地小模型在 CPU 上生成较慢，超时给足
+    llm_timeout: float = 180.0
+
 
 @lru_cache
 def get_settings() -> Settings:
