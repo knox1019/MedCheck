@@ -19,6 +19,7 @@
 from dataclasses import dataclass, field
 
 from app.core.config import get_settings
+from app.rag.citation import Citation, citations_from_hits
 from app.rag.embedder import Embedder
 from app.rag.guards import DrugMatch, resolve_drugs
 from app.rag.store import get, get_client, search
@@ -44,6 +45,8 @@ class RetrieveResult:
     reason: str = ""
     drug_match: DrugMatch = field(default_factory=DrugMatch)
     reranked: bool = False
+    # 出处列表，随 hits 一起产出。拒答时为空——没有依据就不该有出处。
+    citations: list[Citation] = field(default_factory=list)
 
     @property
     def drug(self) -> str | None:
@@ -167,6 +170,11 @@ def retrieve(
         hits = hits[:top_k]
 
     result.hits = hits
+
+    # ---- 出处：只有放行的情况才有出处 ----
+    # 拒绝回答时绝不能给出处——那会让用户以为系统「查过资料但不想说」，
+    # 而事实是根本没有可用资料。
+    result.citations = citations_from_hits(hits)
 
     result.answerable = True
     if result.drug_match.has_unknown:
